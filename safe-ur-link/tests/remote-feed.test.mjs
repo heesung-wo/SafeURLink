@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { validateFeed, downloadFeed } from '../core/remote-feed.js';
 import { normalizeRows } from '../scripts/build-feed.mjs';
-import { parsePhishTankJson, threatfox } from '../scripts/collectors.mjs';
+import { phishtank, threatfox } from '../core/feeds.js';
 const sample = (signatures = [{ url: 'https://phishing.test/login', source: 'Demo', meta: { threat: 'demo' } }]) =>
   ({ schema: 1, generatedAt: new Date().toISOString(), signatures });
 test('시연용 정상 피드 검증', () => {
@@ -44,9 +44,13 @@ test('정규화 및 중복 제거', () => {
   assert.equal(a.length, 1);
   assert.equal(a[0].meta.extraKey, undefined);
 });
-test('PhishTank JSON 파싱', () => {
-  const r = parsePhishTankJson(JSON.stringify([{ url: 'https://phishing.test/', verified: 'yes', online: 'yes' }]));
-  assert.equal(r[0].meta.verified, true);
+test('실제 수집기에서 PhishTank JSON 파싱', async () => {
+  const oldFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async () => new Response(JSON.stringify([{ url: 'https://phishing.test/', verified: 'yes', online: 'yes' }]));
+    const r = await phishtank();
+    assert.equal(r[0].meta.verified, true);
+  } finally { globalThis.fetch = oldFetch; }
 });
 test('미인증 ThreatFox 접근은 API 호출 전 거부', async () =>
   assert.rejects(() => threatfox({ authKey: '' }), /Auth-Key/));

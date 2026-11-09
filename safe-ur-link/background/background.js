@@ -1,12 +1,14 @@
 import { normalizeUrl, hostOf, heuristics, externalScore, verdictOf } from '../core/common.js';
 import * as db from '../core/db.js';
-import { SIGNATURE_FEED_URL, REFRESH_INTERVAL_MS } from '../core/config.js';
+import { SIGNATURE_FEED_URL } from '../core/config.js';
+import { nextAutomaticCheckAt, lastCheckedTime } from '../core/daily-sync.js';
 import { downloadFeed } from '../core/remote-feed.js';
 import { buildProtectionRules, hostMatches, DEMO_SIGNATURES, sessionAllowCondition, REALTIME_FRESH_MS } from '../core/dnr.js';
 import { registerContextMenu, targetFromContext, resultPageUrl } from '../core/context-menu.js';
 
 const DEFAULTS = { realtime: true, allow: [], block: [] };
 const RETRY_MS = 60 * 60_000, MANUAL_COOLDOWN_MS = 60_000;
+const SYNC_ALARM_NAME = 'sync';
 // 다운로드된 악성 시그니처는 block, 사용자 차단 도메인만 redirect (Chrome 121+ 총 30,000개 한도).
 const getSettings = async () => ({ ...DEFAULTS, ...(await chrome.storage.local.get(Object.keys(DEFAULTS))) });
 const WARNING_PAGE = 'pages/warning/warning.html';
@@ -23,7 +25,7 @@ export async function check(raw) {
   const url = normalizeUrl(raw);
   if (!url) return { error: 'http/https URL만 검사할 수 있습니다.' };
   const host = hostOf(url), s = await getSettings();
-  const base = { url, host, checkedAt: Date.now() };
+  const base = { url, host };
   if (s.allow.some(entry => hostMatches(host, entry))) return { ...base, verdict: 'No Threat Detected', score: 0, userList: 'allow', sources: [], reasons: [{ points: 0, text: '사용자 허용 목록에 등록된 도메인입니다' }] };
   if (s.block.some(entry => hostMatches(host, entry))) return { ...base, verdict: 'Malicious', score: 100, userList: 'block', sources: [], reasons: [{ points: 0, text: '사용자 차단 목록에 등록된 도메인입니다' }] };
 
@@ -45,7 +47,6 @@ export async function check(raw) {
     externalScore: ext.score, heuristicScore: heur.score,
     lastObservedAt: records.map(r => Date.parse(r.meta?.lastObservedAt) || 0).reduce((a,b) => Math.max(a,b), 0) || null,
     sources: [...new Set(records.map(r => r.source))],
-    threats: [...new Set(records.map(r => r.meta?.threat).filter(Boolean))],
     reasons: [...(historyOnly ? [{ points: 0, text: '과거 악성 등록 이력이 있지만 최신 피드에 없거나 7일 이상 재확인되지 않았습니다. 현재 악성 여부는 미확정입니다.', kind: 'history' }] : []),
       ...ext.reasons.map(r => ({ ...r, kind: 'external' })), ...heur.reasons.map(r => ({ ...r, kind: 'heuristic' }))]
   };
@@ -59,7 +60,9 @@ let runningSync;
 async function performSync(force) {
   const { feedMeta = {} } = await chrome.storage.local.get('feedMeta');
   const now = Date.now();
-  if (!force && feedMeta.nextAt && now < feedMeta.nextAt) return { ok: !feedMeta.lastError, skipped: true };
+  // 기존 6시간 간격 nextAt 값이 남아 있어도 새 일일 일정으로 판단한다.
+  const dueAt = nextAutomaticCheckAt(now, lastCheckedTime(feedMeta), feedMeta.nextRetryAt);
+  if (!force && now < dueAt) return { ok: !feedMeta.lastError, skipped: true, nextAt: dueAt };
   if (force && feedMeta.lastAttempt && now - feedMeta.lastAttempt < MANUAL_COOLDOWN_MS) return { ok: !feedMeta.lastError, skipped: true, cooldown: true };
   try {
     const feed = await downloadFeed(SIGNATURE_FEED_URL);
@@ -77,9 +80,12 @@ async function performSync(force) {
       if (!feed.demoOnly && feed.records.length) await db.clearDemo();
       changed = true;
     }
+    const completedAt = Date.now();
     await chrome.storage.local.set({ feedMeta: {
-      generatedAt: feed.generatedAt, lastAttempt: now, lastSuccess: Date.now(),
-      nextAt: Date.now() + REFRESH_INTERVAL_MS, count: feed.records.length, demoOnly: feed.demoOnly, sourceStatus: feed.sourceStatus
+      generatedAt: feed.generatedAt, lastAttempt: now, lastSuccess: completedAt,
+      lastCheckedAt: now, lastAppliedAt: changed ? completedAt : feedMeta.lastAppliedAt,
+      nextAt: nextAutomaticCheckAt(completedAt, now),
+      count: feed.records.length, demoOnly: feed.demoOnly, sourceStatus: feed.sourceStatus
     } });
     let ruleError;
     if (changed || feedMeta.ruleError) {
@@ -89,12 +95,18 @@ async function performSync(force) {
     return { ok: !ruleError, changed, count: feed.records.length, error: ruleError };
   } catch (e) {
     const error = String(e.message || e);
-    await chrome.storage.local.set({ feedMeta: { ...feedMeta, lastAttempt: now, nextAt: now + RETRY_MS, lastError: error } });
+    const nextRetryAt = Date.now() + RETRY_MS;
+    await chrome.storage.local.set({ feedMeta: { ...feedMeta, lastAttempt: now, nextRetryAt,
+      nextAt: nextAutomaticCheckAt(Date.now(), lastCheckedTime(feedMeta), nextRetryAt), lastError: error } });
     return { ok: false, error };
   }
 }
 export function sync(force = false) {
-  if (!runningSync) runningSync = performSync(force).finally(() => { runningSync = undefined; });
+  if (!runningSync) runningSync = performSync(force).finally(() => {
+    runningSync = undefined;
+    // 수동 갱신 또는 오류 재시도 이후에도 일일 예약을 다시 계산한다.
+    ensureDailyAlarm().catch(console.error);
+  });
   return runningSync;
 }
 
@@ -103,17 +115,36 @@ let rulesQueue = Promise.resolve();
 export function rebuildRules() {
   const task = rulesQueue.then(async () => {
     const s = await getSettings();
+    // 보호 기능이 꺼져 있으면 DB 수십만 건을 읽을 필요가 없다.
+    const records = s.realtime === false ? [] : await db.all();
     const { rules, stats } = buildProtectionRules(
-      s, await db.all(), chrome.runtime.getURL(WARNING_PAGE)
+      s, records, chrome.runtime.getURL(WARNING_PAGE)
     );
     const old = (await chrome.declarativeNetRequest.getDynamicRules()).map(r => r.id);
     // DNR 변경은 원자적으로 적용된다. 실패하면 기존 정상 규칙이 그대로 남는다.
     await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: old, addRules: rules });
-    await chrome.storage.local.set({ ruleCount: rules.length, ruleStats: stats });
+    await chrome.storage.local.set({ ruleCount: rules.length, ruleStats: stats, appliedSettings: s });
     return stats;
   });
   rulesQueue = task.catch(() => {});
   return task;
+}
+
+// 브라우저 시작 시 DNR 규칙이 유지되어 있다면 불필요한 전체 DB 재조회/정렬을 피한다.
+// 동적 규칙은 MV3에서 세션 간 지속된다. 카운트 또는 적용 설정이 달라졌을 때만 복구한다.
+export async function ensureRulesInstalled() {
+  const s = await getSettings();
+  const { ruleCount, appliedSettings } = await chrome.storage.local.get(['ruleCount', 'appliedSettings']);
+  if (!Number.isInteger(ruleCount) || JSON.stringify(appliedSettings) !== JSON.stringify(s)) {
+    return rebuildRules();
+  }
+  try {
+    const existing = await chrome.declarativeNetRequest.getDynamicRules();
+    if (existing.length === ruleCount) return { reused: true, count: ruleCount };
+  } catch (error) {
+    console.warn('DNR 규칙 상태 점검 실패, 재구성합니다:', error);
+  }
+  return rebuildRules();
 }
 
 // 이번 브라우저 세션에서 '해당 탭 + 정확한 URL'만 예외 허용.
@@ -135,28 +166,75 @@ async function allowOnce(raw, tabId) {
   return { ok: true, reused: false };
 }
 
+// ── 자동 동기화 일정
+// 반복 알람 대신 한국 시간 매일 15:00의 단발성 알람을 사용한다.
+// 브라우저 종료·절전으로 예약 시각을 놓쳤다면 다음 시작 시 즉시 보충 확인한다.
+let schedulingAlarm;
+export function ensureDailyAlarm() {
+  if (typeof chrome.alarms?.get !== 'function' || typeof chrome.alarms?.create !== 'function') {
+    return Promise.resolve();
+  }
+  if (!schedulingAlarm) {
+    schedulingAlarm = (async () => {
+      const { feedMeta = {} } = await chrome.storage.local.get('feedMeta');
+      const now = Date.now();
+      const desired = nextAutomaticCheckAt(now, lastCheckedTime(feedMeta), feedMeta.nextRetryAt);
+      // 이미 기한이 지났으면 시작 루틴이 즉시 확인한다. 알람도 백업으로 예약한다.
+      const when = Math.max(desired, now + 60_000);
+      const current = await chrome.alarms.get(SYNC_ALARM_NAME);
+      if (!current || current.periodInMinutes != null ||
+          !Number.isFinite(current.scheduledTime) || Math.abs(current.scheduledTime - when) > 60_000) {
+        await chrome.alarms.create(SYNC_ALARM_NAME, { when });
+      }
+      return when;
+    })().finally(() => { schedulingAlarm = undefined; });
+  }
+  return schedulingAlarm;
+}
+
+let startingAutoSync;
+export function runAutomaticSync() {
+  if (!startingAutoSync) {
+    startingAutoSync = (async () => {
+      const { feedMeta = {} } = await chrome.storage.local.get('feedMeta');
+      const now = Date.now();
+      if (nextAutomaticCheckAt(now, lastCheckedTime(feedMeta), feedMeta.nextRetryAt) <= now) {
+        return sync(); // 진행 중인 갱신 작업이 있으면 중복 실행하지 않는다.
+      }
+      await ensureDailyAlarm();
+      return { ok: true, skipped: true };
+    })().finally(() => { startingAutoSync = undefined; });
+  }
+  return startingAutoSync;
+}
+
 // ── 이벤트
-const ensureAlarm = () => chrome.alarms.create('sync', { periodInMinutes: 60 });
 chrome.runtime.onInstalled.addListener(() => {
   // 이전 버전(사용자가 API 키를 직접 입력)에서 저장된 키와 상태를 제거한다.
   chrome.storage.local.remove(['authKey', 'phishKey', 'feedState', 'syncStatus']);
-  ensureAlarm();
   ensureContextMenu().catch(console.error);
   rebuildRules().catch(console.error);
-  sync();
+  runAutomaticSync().catch(console.error);
 });
 chrome.runtime.onStartup.addListener(() => {
-  ensureAlarm();
-  ensureContextMenu().catch(console.error); // 메뉴가 누락되었어도 브라우저 시작 시 복구
-  rebuildRules().catch(console.error);
-  sync();
+  ensureContextMenu().catch(console.error);
+  ensureRulesInstalled().catch(console.error);
+  runAutomaticSync().catch(console.error);
 });
-chrome.alarms.onAlarm.addListener(a => a.name === 'sync' && sync());
+chrome.alarms.onAlarm.addListener(a => {
+  if (a.name === SYNC_ALARM_NAME) runAutomaticSync().catch(console.error);
+});
+
+// 서비스 워커가 알람이나 사용자 요청으로 깨어날 때도 예약 누락을 복구한다.
+// 일부 Chromium 환경에서는 브라우저 재시작 시 알람이 사라질 수 있다.
+if (typeof chrome.alarms?.get === 'function' && typeof chrome.alarms?.create === 'function') {
+  runAutomaticSync().catch(console.error);
+}
 
 chrome.contextMenus.onClicked.addListener((info) => {
   const target = targetFromContext(info);
   if (!target) return;
-  // 선택 URL과 링크 목적지를 메뉴별로 명확히 분리해 전달한다.
+  // 사용자가 드래그한 선택 텍스트만 사용하며 링크 목적지로 대체하지 않는다.
   // 결과 페이지만 열고 위험 URL로 직접 이동하지 않는다.
   chrome.tabs.create({ url: resultPageUrl(chrome.runtime, target) })
     .catch(e => console.error('SafeURLink 우클릭 검사 결과 탭 열기 실패:', e));
@@ -169,7 +247,12 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
     rebuild: () => rebuildRules(),
     allowOnce: () => allowOnce(msg.url, sender.tab?.id),
     goSafe: () => chrome.tabs.update(sender.tab.id, { url: 'chrome://newtab/' }),
-    status: async () => ({ ...(await chrome.storage.local.get(['feedMeta', 'ruleCount', 'ruleStats'])), counts: await db.countBySource() })
+    status: async () => {
+      const data = await chrome.storage.local.get(['feedMeta', 'ruleCount', 'ruleStats']);
+      const meta = data.feedMeta || {};
+      return { ...data, feedMeta: { ...meta, nextAt: nextAutomaticCheckAt(
+        Date.now(), lastCheckedTime(meta), meta.nextRetryAt) }, counts: await db.countBySource() };
+    }
   }[msg.type];
   if (!run) return false;
   run().then(reply, e => reply({ error: String(e.message || e) }));

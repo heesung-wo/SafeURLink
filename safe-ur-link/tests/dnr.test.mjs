@@ -129,7 +129,7 @@ test('유효하지 않은 도메인, 사용자 차단 300개 초과 등 제한�
 test('DNR 필터 메타 문자를 포함하면 과잉 차단 규칙 대신 DB 검사만 사용한다', () => {
   const {rules,stats} = build({}, [sig('https://bad.test/*')]);
   assert.equal(stats.unsupportedUrls,1);
-  assert.equal(stats.skippedUrls,1);
+  assert.equal(stats.unsupportedUrls,1); // 차단되지 않은 이유별 통계만 유지
   assert.ok(!rules.some(r => r.condition.urlFilter?.includes('bad.test/')));
 });
 

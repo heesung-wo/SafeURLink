@@ -55,7 +55,8 @@ async function status() {
     rows.push(`<tr><td>${esc(src)} 갱신 상태</td><td>${esc(label + latest)}</td></tr>`);
   }
   if (m.generatedAt) rows.push(`<tr><td colspan="2" class="muted">데이터 생성 시각: ${esc(time(m.generatedAt))}</td></tr>`);
-  if (m.lastSuccess) rows.push(`<tr><td colspan="2" class="muted">마지막 업데이트: ${esc(time(m.lastSuccess))}</td></tr>`);
+  if (m.lastSuccess) rows.push(`<tr><td colspan="2" class="muted">마지막 피드 확인 성공: ${esc(time(m.lastSuccess))}</td></tr>`);
+  if (m.lastAppliedAt) rows.push(`<tr><td colspan="2" class="muted">마지막 새 피드 적용: ${esc(time(m.lastAppliedAt))}</td></tr>`);
   if (m.nextAt) rows.push(`<tr><td colspan="2" class="muted">다음 확인: ${esc(time(m.nextAt))}</td></tr>`);
   if (m.ruleError) rows.push(`<tr><td colspan="2" class="err">차단 규칙 적용 오류: ${esc(m.ruleError)}</td></tr>`);
   if (m.lastError) rows.push(`<tr><td colspan="2" class="err">최근 오류: ${esc(m.lastError)} (기존 데이터 유지 중)</td></tr>`);
@@ -66,7 +67,12 @@ async function status() {
   $('note').textContent = notes.join(' ');
 }
 
-async function save() {
+function sameSettings(a, b) {
+  return a.realtime === b.realtime && ['allow', 'block'].every(key =>
+    a[key].length === b[key].length && a[key].every((item, i) => item === b[key][i]));
+}
+
+async function save({ showMessage = true } = {}) {
   $('msg').textContent = '';
   const button = $('save');
   button.disabled = true;
@@ -78,10 +84,15 @@ async function save() {
       block: parseHostList($('block').value)
     };
     validateHostLists(next.allow, next.block);
+    const current = { realtime: previous.realtime !== false, allow: previous.allow || [], block: previous.block || [] };
+    if (sameSettings(current, next)) {
+      if (showMessage) $('msg').textContent = '변경된 설정이 없습니다.';
+      return true;
+    }
     await chrome.storage.local.set(next);
     const result = await chrome.runtime.sendMessage({ type: 'rebuild' });
     if (result?.error) throw new Error(result.error);
-    $('msg').textContent = '설정 및 실시간 보호 규칙을 적용했습니다.';
+    if (showMessage) $('msg').textContent = '설정 및 실시간 보호 규칙을 적용했습니다.';
     await load();
     return true;
   } catch (e) {
@@ -91,14 +102,17 @@ async function save() {
     return false;
   } finally { button.disabled = false; }
 }
-$('save').onclick = save;
+$('save').onclick = () => save();
 $('sync').onclick = async () => {
   $('sync').disabled = true;
   $('sync').textContent = '업데이트 중…';
   try {
-    if (!await save()) return;
+    // 설정이 바뀌지 않았다면 save()는 DNR 재생성을 생략한다.
+    if (!await save({ showMessage: false })) return;
     const result = await chrome.runtime.sendMessage({ type: 'sync', force: true });
     if (result?.error) $('msg').textContent = '업데이트 오류: ' + result.error;
+    else $('msg').textContent = result?.cooldown ? '갱신 요청 간격(1분) 내입니다.' :
+      result?.changed ? '새 시그니처를 적용했습니다.' : '이미 최신 시그니처입니다.';
     await status();
   } catch (e) {
     $('msg').textContent = String(e.message || e);

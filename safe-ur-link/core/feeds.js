@@ -1,14 +1,7 @@
 // 위협 인텔리전스 수집기. 각 함수는 [{url, meta}]를 반환한다.
 // 실제 악성 URL에 접속하지 않고, 정보 제공자의 공식 피드만 다운로드한다.
-// 반환되는 URL은 정규화 전 원본이다. 정규화/저장은 background/background.js에서 처리한다.
-
-export const REFRESH_MS = Object.freeze({
-  URLhaus: 60 * 60_000,       // 공식 최소 5분보다 여유 있게 1시간
-  PhishTank: 60 * 60_000,     // 인증된 경우: 원본 데이터가 1시간마다 갱신
-  PhishingDB: 6 * 60 * 60_000,
-  ThreatFox: 6 * 60 * 60_000
-});
-export const PHISHTANK_ANONYMOUS_MS = 24 * 60 * 60_000; // 보수적인 자체 정책, 공식 보장량 아님
+// 반환되는 URL은 정규화 전 원본이며, 수집 후 빌드 스크립트에서 정규화한다.
+// 원본 API의 호출 주기는 GitHub Actions에서 관리한다.
 
 function needKey(source) {
   const error = new Error(`${source}: 무료 abuse.ch Auth-Key가 필요합니다 (https://auth.abuse.ch/)`);

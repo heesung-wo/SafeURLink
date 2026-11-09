@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { urlhaus, phishtank, phishingDatabase, threatfox, REFRESH_MS, PHISHTANK_ANONYMOUS_MS, PHISHING_DB_URL, PHISHING_DB_FALLBACK_URL } from '../core/feeds.js';
+import { urlhaus, phishtank, phishingDatabase, threatfox, PHISHING_DB_URL, PHISHING_DB_FALLBACK_URL } from '../core/feeds.js';
 
 function mock(body, status = 200, headers = {}) {
   return async (url, init = {}) => {
@@ -94,11 +94,6 @@ test('PhishingDB: HTML 응답이나 빈 파일은 오류', async () => {
 test('HTTP 509 surfaces as rate limit', async () => {
   globalThis.fetch = mock('blocked',509);
   await assert.rejects(phishtank({}), /509.*호출 제한/);
-});
-
-test('refresh limits are conservative', () => {
-  assert.equal(REFRESH_MS.URLhaus,60*60_000);
-  assert.equal(PHISHTANK_ANONYMOUS_MS,24*60*60_000);
 });
 
 test('PhishTank sends custom User-Agent only when provided (server-side build)', async () => {

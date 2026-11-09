@@ -70,10 +70,10 @@ export function buildProtectionRules(settings, records, warningBase) {
 
   const stats = {
     total: 0, signatureRules: 0, userBlockRules: 0, userAllowRules: 0,
-    candidateUrls: 0, coveredUrls: 0, skippedUrls: 0,
+    candidateUrls: 0,
     excludedByAllow: 0, handledByUserBlock: 0, unsupportedUrls: 0, quotaOverflowUrls: 0,
     historicalUrls: 0, staleUrls: 0,
-    selectedBySource: {}, sourceLimits: REALTIME_SOURCE_LIMITS,
+    selectedBySource: {},
     limit: MAX_PROTECTION_RULES
   };
   if (settings.realtime === false) return { rules: [], stats };
@@ -133,7 +133,6 @@ export function buildProtectionRules(settings, records, warningBase) {
     if (allow.some(h => hostMatches(host, h))) { stats.excludedByAllow++; continue; }
     if (block.some(h => hostMatches(host, h))) {
       stats.handledByUserBlock++;
-      stats.coveredUrls++;
       continue;
     }
     const row = { url, rank: rankOf(fresh) };
@@ -168,8 +167,6 @@ export function buildProtectionRules(settings, records, warningBase) {
   stats.total = rules.length;
   // 전체 DB 중 실시간 보호에 선정되지 못한 URL 수(소스별 제한 + DNR 전체 규칙 제한).
   stats.quotaOverflowUrls = Math.max(0, allCandidates.size - stats.signatureRules);
-  stats.skippedUrls = stats.historicalUrls + stats.staleUrls + stats.unsupportedUrls + stats.excludedByAllow + stats.quotaOverflowUrls;
-  // 사용자 차단 도메인으로 리다이렉트하는 URL은 skippedUrls에 넣지 않는다.
   return { rules, stats };
 }
 

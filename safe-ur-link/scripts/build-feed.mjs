@@ -4,7 +4,7 @@
 //   PHISHTANK_KEY      : PhishTank (선택)
 //   PHISHTANK_USER_AGENT : PhishTank 요청에 쓸 식별 가능한 User-Agent
 //   PUBLISH_* / REDISTRIBUTION_CONFIRMED : 소스별 공개 재배포 허용 스위치 (URLHAUS, THREATFOX, PHISHTANK, PHISHING_DB)
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile, readFile, rename } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { normalizeUrl } from '../core/common.js';
@@ -42,16 +42,50 @@ export const NOTICES = {
   }
 };
 
+// 기존 workflow의 actions/cache 경로를 실제로 사용한다.
+// 당일 한 번 성공적으로 받은 PhishTank 공개 데이터는 인증키 없이 로컬 캐시에 기록해
+// 같은 UTC 날짜의 재실행에서 중복 다운로드를 피한다. 오래되거나 잘못된 캐시는 무시한다.
+const PHISHTANK_CACHE_FILE = fileURLToPath(new URL('../.cache/phishtank-daily.json', import.meta.url));
+export async function cachedPhishTank(collect, {
+  cacheFile = PHISHTANK_CACHE_FILE,
+  utcDay = () => new Date().toISOString().slice(0, 10),
+  log = () => {}
+} = {}) {
+  const day = utcDay();
+  try {
+    const data = JSON.parse(await readFile(cacheFile, 'utf8'));
+    if (data?.version === 1 && data.day === day && Array.isArray(data.records) && data.records.length > 0 &&
+        data.records.every(row => row && typeof row.url === 'string' && normalizeUrl(row.url) && row.meta && typeof row.meta === 'object')) {
+      log(`PhishTank: ${day} UTC 당일 캐시 ${data.records.length}건 재사용`);
+      return data.records;
+    }
+  } catch { /* 캐시 없음/오류: 정상적으로 원본 수집 시도 */ }
+
+  const collected = await collect();
+  // 캐시에 API 키/응답 헤더 등을 기록하지 않고, 공개 피드에 필요한 정보만 보관한다.
+  const records = normalizeRows('PhishTank', collected).map(({ url, meta }) => ({ url, meta }));
+  if (!records.length) return collected; // 빈 수집은 캐시하지 않고 기존 빌드 정책에 맡김
+  try {
+    await mkdir(path.dirname(cacheFile), { recursive: true });
+    const temp = `${cacheFile}.tmp`;
+    await writeFile(temp, JSON.stringify({ version: 1, day, records }));
+    await rename(temp, cacheFile);
+  } catch (error) {
+    log(`PhishTank: 캐시 저장 실패(수집 데이터는 정상 사용): ${error.message || error}`);
+  }
+  return records;
+}
+
 export function defaultCollectors(env = {}, log = () => {}) {
   return {
     URLhaus: () => urlhaus({ authKey: env.ABUSE_CH_AUTH_KEY || '' }),
     ThreatFox: () => threatfox({ authKey: env.ABUSE_CH_AUTH_KEY || '' }),
-    PhishTank: () => phishtank({
+    PhishTank: () => cachedPhishTank(() => phishtank({
       phishKey: env.PHISHTANK_KEY || '',
       userAgent: env.PHISHTANK_USER_AGENT || 'phishtank/SafeURLinkCapstone',
       onFallback: log
-    }),
-    PhishingDB: () => phishingDatabase({ userAgent: env.FEED_USER_AGENT || 'SafeURLinkFeedBuilder (+https://github.com/heesung-wo/Capstone)', onFallback: log })
+    }), { log }),
+    PhishingDB: () => phishingDatabase({ userAgent: env.FEED_USER_AGENT || 'SafeURLinkFeedBuilder (+https://github.com/heesung-wo/SafeURLink)', onFallback: log })
   };
 }
 
