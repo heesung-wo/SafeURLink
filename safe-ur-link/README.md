@@ -46,7 +46,11 @@ Chrome / Whale용 Manifest V3 확장 프로그램으로, URL 직접 검사·선�
 
 ## 개발자 설정 (한 번만)
 
-저장소 이름이 `Capstone`이고 이 프로젝트가 `safe-ur-link/` 하위 폴더라는 전제입니다.
+**새 저장소로 이전한 경우 점검:** `https://github.com/heesung-wo/SafeURLink.git`은 소스 저장소의 Git 원격 주소이며, 확장 프로그램이 받아야 할 주소는 `https://heesung-wo.github.io/SafeURLink/signatures.json`입니다. `core/config.js`의 `SIGNATURE_FEED_URL`과 워크플로의 `PREVIOUS_FEED_URL`을 일치시켜야 합니다. **이번 첨부본은 두 값이 이미 일치하므로 워크플로 코드는 수정하지 않았습니다.**
+
+새 저장소의 첫 Pages 배포가 없으면 `signatures.json`에 404가 발생합니다. GitHub Actions가 이전 피드를 필수로 읽도록 설정되어 있으므로, 기존에 수집한 데이터를 보존하려면 새 주소에 과거 피드를 먼저 정상 배포하거나 이전 피드를 복구하여 이관하는 방법을 마련해야 합니다. 확장 프로그램의 약 100만 건 IndexedDB 데이터는 **소스 저장소 이전만으로 서버에 자동 이관되지 않습니다.**
+
+GitHub 저장소는 `https://github.com/heesung-wo/SafeURLink`이며, 프로젝트 코드는 저장소의 `safe-ur-link/` 하위 폴더에 있습니다. **저장소 주소(.git)**와 **공개 피드 주소(GitHub Pages)**는 서로 다릅니다.
 워크플로 파일은 **저장소 루트** `.github/workflows/update-signatures.yml`에 있어야 GitHub가 인식합니다.
 
 1. **Secrets 등록**: Settings → Secrets and variables → Actions → *Secrets*
@@ -55,12 +59,12 @@ Chrome / Whale용 Manifest V3 확장 프로그램으로, URL 직접 검사·선�
 2. **Variables 등록**: 같은 화면의 *Variables* 탭
    - `PHISHTANK_USER_AGENT` : 식별 가능한 문자열 (예: `phishtank/내아이디`)
 3. **Pages 소스 변경**: Settings → Pages → Build and deployment → Source: **GitHub Actions**
-4. **이전 배포 피드 설정**: `.github/workflows/update-signatures.yml`의 `PREVIOUS_FEED_URL`을 현재 Pages에 배포한 `signatures.json` 주소와 동일하게 맞춥니다. 기본 예시는 `https://heesung-wo.github.io/Capstone/signatures.json`입니다.
-   - 주소가 404면 안전을 위해 빌드가 중단됩니다. **정말 최초 배포일 때만** `ALLOW_FIRST_DEPLOY: 'true'`로 한 번 실행하고, 성공 후 `'false'`로 복원하세요.
+4. **이전 배포 피드 설정**: `.github/workflows/update-signatures.yml`의 `PREVIOUS_FEED_URL`을 현재 Pages에 배포한 `signatures.json` 주소와 동일하게 맞춥니다. 현재 설정값은 `https://heesung-wo.github.io/SafeURLink/signatures.json`입니다.
+   - 새 저장소에서 Pages를 아직 한 번도 배포하지 않았다면 404로 빌드가 중단될 수 있습니다. **기존 누적 이력이 있다면 반드시 먼저 백업·이관하세요.** 누적 이력 복원이 필요한 상태에서 `ALLOW_FIRST_DEPLOY`만 `true`로 바꾸면 과거 데이터가 빠질 수 있습니다. 정말 새로운 빈 DB로 시작하는 경우에만 `true`로 최초 1회 배포하고 성공 후 `false`로 복원하세요.
    - 이전 피드가 5xx·잘못된 JSON 등의 오류를 반환해도 빌드를 중단하여 기존 누적 데이터를 덮어쓰지 않습니다.
 5. **첫 배포/갱신**: Actions 탭 → *Build and deploy signatures* → *Run workflow*
    - `PUBLISH_*`가 모두 `false`이면 `.test` 도메인만 생성합니다. **이전 실제 시그니처가 있는 상태에서 모두 `false`로 바뀌면** 실수로 배포를 지우지 않도록 오류가 발생합니다.
-6. 배포 후 `https://<계정>.github.io/Capstone/signatures.json` 이 열리는지 확인하고, 다르면 `core/config.js`와 `manifest.json`의 `host_permissions`를 맞춥니다.
+6. 배포 후 `https://heesung-wo.github.io/SafeURLink/signatures.json`이 **HTTP 200과 올바른 시그니처 JSON**을 반환하는지 확인합니다. 404면 `Settings → Pages → Source: GitHub Actions`와 `Deploy to GitHub Pages` 실행 결과부터 점검하세요. 저장소 이름만 변경했다고 GitHub Pages가 자동 게시되는 것은 아닙니다.
 7. **실제 데이터 공개**: 각 소스의 약관에서 공개 재배포가 허용되는지 확인한 뒤, 워크플로의 해당 `PUBLISH_*`와 `REDISTRIBUTION_CONFIRMED`를 `'true'`로 바꿉니다. (`PUBLISH_URLHAUS`, `PUBLISH_THREATFOX`, `PUBLISH_PHISHTANK`, `PUBLISH_PHISHING_DB`)
 
 > `signatures.json`은 누구나 내려받을 수 있는 공개 파일입니다. 키는 들어가지 않지만 수집한 URL 목록은 공개됩니다.
@@ -71,7 +75,7 @@ Chrome / Whale용 Manifest V3 확장 프로그램으로, URL 직접 검사·선�
 
 > **부분 실패 시 보존 정책(v0.6.2 이후 유지):** 워크플로 기본 `OPTIONAL_SOURCES: 'PhishingDB,PhishTank'`. 선택 소스에서 수집 실패가 발생해도 이전 공개 피드에 있던 해당 소스 기록을 **그대로 유지**하고, 다른 성공한 소스만 갱신합니다. 이전 데이터 자체가 없으면 `unavailable`로 표시합니다. 필수 소스 실패나 전체 소스 실패는 배포하지 않습니다.
 
-> **기존 GitHub Actions 설정 유지:** 이번 배포 ZIP에는 워크플로를 넣지 않았습니다. 저장소의 기존 `PUBLISH_*`, `REDISTRIBUTION_CONFIRMED`, 비밀키, 예약 설정을 그대로 유지하세요. 새 캐시는 기존 `actions/cache`의 경로를 사용합니다.
+> **기존 GitHub Actions 설정 유지:** 이번 경로 수정 패치에는 워크플로를 넣지 않았습니다. 원본 워크플로의 `PREVIOUS_FEED_URL`은 이미 새 경로입니다. 저장소의 기존 `PUBLISH_*`, `REDISTRIBUTION_CONFIRMED`, 비밀키, 예약 설정을 그대로 유지하세요. 새 캐시는 기존 `actions/cache`의 경로를 사용합니다.
 
 ## 확장 프로그램 설치 (개발자 모드)
 
@@ -166,12 +170,12 @@ npm run build:feed       # public/signatures.json 생성 (환경변수 없으면
 - Phishing.Database는 MIT 라이선스입니다. 공개하면 `signatures.json`(`notices`)과 Pages 첫 화면에 저작권·라이선스 고지가 함께 실립니다.
 - OpenPhish 무료 피드는 비상업 용도로 제한되고 재배포 조건이 불명확해 지원하지 않습니다.
 - 이전 버전(사용자가 키를 직접 입력)에서 업데이트하면 저장돼 있던 키가 자동 삭제됩니다.
-- 실제 외부 서버 인증과 대용량 수집, 브라우저에서의 확장 프로그램 동작은 이 환경에서 검증하지 못했습니다. 현재 109개 테스트는 모의 응답 및 브라우저 IndexedDB 동작을 단순화한 로직 검증이며, 실제 통합 시험을 대체하지 않습니다.
+- 실제 외부 서버 인증과 대용량 수집, 브라우저에서의 확장 프로그램 동작은 이 환경에서 검증하지 못했습니다. 현재 127개 테스트는 모의 응답 및 브라우저 IndexedDB 동작을 단순화한 로직 검증이며, 실제 통합 시험을 대체하지 않습니다.
 
 ## 파일 구조
 
 ```text
-Capstone/
+SafeURLink/
 ├── .github/workflows/update-signatures.yml   # 수집 → Pages 배포 (키는 여기서만 사용)
 └── safe-ur-link/
     ├── manifest.json
@@ -194,4 +198,4 @@ Capstone/
 
 ### 이름 통일과 기존 데이터 호환성
 
-Chrome UI(확장 프로그램 이름, 팝업, 설정, 우클릭 메뉴, 경고, 로그 메시지)는 `SafeURLink`로 통일합니다. `safe-ur-link/` 경로와 IndexedDB의 `safe-ur-link` 내부 저장소 이름은 **기존 GitHub Actions 경로 및 설치된 확장 프로그램 데이터 유지**를 위해 변경하지 않습니다. 내부 키/경로는 사용자에게 표시되는 브랜드명이 아닙니다.
+Chrome UI(확장 프로그램 이름, 팝업, 설정, 우클릭 메뉴, 경고, 로그 메시지)는 `SafeURLink`로 통일합니다. `safe-ur-link/` 경로와 IndexedDB의 `safe-ur-link` 내부 저장소 이름은 **현재 GitHub Actions 내부 경로 및 설치된 확장 프로그램 데이터 유지**를 위해 변경하지 않습니다. 내부 키/경로는 사용자에게 표시되는 브랜드명이 아닙니다.

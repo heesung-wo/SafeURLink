@@ -5,7 +5,7 @@
 ## 동작
 
 - GitHub Actions: 기존 설정 그대로, 매일 **12:17 KST경** 각 외부 API에서 수집한 데이터를 GitHub Pages에 배포합니다.
-- 확장 프로그램: `https://heesung-wo.github.io/Capstone/signatures.json`을 **매일 15:00 KST**에 확인합니다.
+- 확장 프로그램: `https://heesung-wo.github.io/SafeURLink/signatures.json`을 **매일 15:00 KST**에 확인합니다.
 - 브라우저가 그 시각에 종료되거나 절전 중이었다면 다음 브라우저 실행 시 누락된 확인을 수행합니다.
 - 한 예약 주기의 다운로드·DB 반영을 정상 완료하면 재실행해도 중복 확인하지 않습니다.
 - 확인이 실패하면 기존 시그니처를 보존하고, 브라우저가 실행 중일 때 **1시간 후 재시도**합니다. 브라우저가 꺼져 있으면 재시도 시각 이후 첫 실행에 재시도합니다.
