@@ -1,0 +1,9 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>SafeURLink 실제 URL 평가 도구</title>
+<style>body{font:15px system-ui,sans-serif;max-width:850px;margin:32px auto;line-height:1.6;color:#152236}h1{font-size:24px}section{padding:18px;border:1px solid #ccd4df;border-radius:12px;margin:14px 0}button{padding:8px 14px;cursor:pointer}input{margin:12px 0}#status{white-space:pre-wrap;padding:12px;background:#eef4ff;border-radius:8px}code{background:#f4f5f8;padding:1px 3px}small{color:#586779}</style>
+</head><body><h1>SafeURLink URL 성능 평가 도구</h1>
+<p>실제 설치된 SafeURLink의 검사 메시지와 DNR 가상 요청을 이용합니다. <strong>URL에 직접 접속하지 않습니다.</strong></p>
+<section><p>CSV 파일 필수 열: <code>url,label</code>. 선택: <code>group,evidence</code>. label은 독립적으로 확인한 악성 URL=1, 정상 URL=0입니다.</p>
+<input type="file" id="file" accept=".csv,text/csv"><button id="start">검사 시작</button> <button id="cancel" disabled>중지</button></section>
+<section><b>진행 상태</b><pre id="status">파일을 선택해 주세요.</pre></section>
+<section><button id="saveResults" disabled>URL별 결과 CSV 저장</button> <button id="saveSummary" disabled>평가 지표 JSON 저장</button><p><small>정상·악성 라벨은 평가자가 외부 근거를 바탕으로 확정해야 합니다. 미등록 악성 URL은 별도 집합으로 보고하세요. DNR 결과가 확인 불가능한 경우 정확도에 포함하지 않습니다.</small></p></section>
+<script type="module" src="evaluate.js"></script></body></html>

@@ -1,0 +1,89 @@
+{
+  "experiment": "Synthetic fixture regression of production check() and buildProtectionRules(); NOT real-world accuracy",
+  "test_count": 10000,
+  "real_feed_in_zip": 2,
+  "synthetic_known_records": 3000,
+  "direct_check_invocations": 10000,
+  "production_source_version": "0.6.9",
+  "dnr_rules_generated": 2500,
+  "block_rules_generated": 2500,
+  "direct_check_group_results": {
+    "known_active": {
+      "n": 2500,
+      "Malicious": 2500,
+      "Suspicious": 0,
+      "No Threat Detected": 0,
+      "ERROR": 0,
+      "block_rules_selected": 2500
+    },
+    "known_historical": {
+      "n": 500,
+      "Malicious": 0,
+      "Suspicious": 500,
+      "No Threat Detected": 0,
+      "ERROR": 0,
+      "block_rules_selected": 0
+    },
+    "unseen_no_indicators": {
+      "n": 1000,
+      "Malicious": 0,
+      "Suspicious": 0,
+      "No Threat Detected": 1000,
+      "ERROR": 0,
+      "block_rules_selected": 0
+    },
+    "unseen_heuristic_signals": {
+      "n": 1000,
+      "Malicious": 0,
+      "Suspicious": 1000,
+      "No Threat Detected": 0,
+      "ERROR": 0,
+      "block_rules_selected": 0
+    },
+    "benign_simple": {
+      "n": 4800,
+      "Malicious": 0,
+      "Suspicious": 0,
+      "No Threat Detected": 4800,
+      "ERROR": 0,
+      "block_rules_selected": 0
+    },
+    "benign_adversarial_synthetic": {
+      "n": 200,
+      "Malicious": 0,
+      "Suspicious": 200,
+      "No Threat Detected": 0,
+      "ERROR": 0,
+      "block_rules_selected": 0
+    }
+  },
+  "illustrative_fixture_confusion_matrix_strict": {
+    "TP": 2500,
+    "FP": 0,
+    "FN": 2500,
+    "TN": 5000,
+    "accuracy": 0.75,
+    "precision": 1,
+    "recall": 0.5,
+    "f1": 0.6666666666666666,
+    "fpr": 0
+  },
+  "illustrative_fixture_confusion_matrix_warning": {
+    "TP": 4000,
+    "FP": 200,
+    "FN": 1000,
+    "TN": 4800,
+    "accuracy": 0.88,
+    "precision": 0.9523809523809523,
+    "recall": 0.8,
+    "f1": 0.8695652173913043,
+    "fpr": 0.04
+  },
+  "time": {
+    "dnr_generation_ms": 63,
+    "direct_total_ms": 160,
+    "mean_check_ms": 0.016,
+    "p95_check_ms": 0.04
+  },
+  "limitation": "All labels are artificial .test assumptions; NOT measured detection accuracy against verified URLs. DNR rules are generated only; Chrome engine not tested."
+}

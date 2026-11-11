@@ -1,0 +1,15 @@
+{
+  "input_records": 100000,
+  "unique_urls": 100000,
+  "generated_rules": 29700,
+  "block_rules": 29700,
+  "selected_by_source": {
+    "URLhaus": 9000,
+    "PhishTank": 9000,
+    "PhishingDB": 9000,
+    "ThreatFox": 2700
+  },
+  "quota_overflow": 70300,
+  "generation_ms": 797,
+  "note": "100,000 synthetic .test signatures; pure JavaScript rule generation only; Chrome installation/matching not tested."
+}
