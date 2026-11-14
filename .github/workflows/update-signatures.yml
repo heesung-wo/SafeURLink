@@ -3,8 +3,8 @@ name: Build and deploy signatures
 on:
   workflow_dispatch:
   schedule:
-    # KST 00:00, 하루 한 번(예약 작업은 지연될 수 있음)
-    - cron: '0 15 * * *'
+    # KST 00:17, 하루 한 번(예약 작업은 지연될 수 있음)
+    - cron: '17 15 * * *'
   push:
     branches: [main]
     paths:
