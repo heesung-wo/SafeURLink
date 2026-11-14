@@ -31,6 +31,7 @@ Chrome/Whale 확장 프로그램
   ├─ core/common.js (URL 분석·위험도)
   ├─ core/dnr.js (차단 규칙 선정)
   └─ pages/ (팝업·검사 결과·경고·설정)
+...
 ```
 
 - GitHub 저장소: <https://github.com/heesung-wo/SafeURLink>
