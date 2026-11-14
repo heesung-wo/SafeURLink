@@ -82,7 +82,6 @@ SafeURLink/
 │   └── package.json
 ├── README.md
 ├── system-architecture.png
-└── SafeURLink_최종결과_보고서_프로토(20261114-093845).docx
 ```
 
 ## 5. 위험도 산정 방식
