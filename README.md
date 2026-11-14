@@ -13,6 +13,10 @@ Chrome / Whale 등 Chromium 기반 브라우저에서 URL의 위험도를 분석
 ![Version](https://img.shields.io/badge/version-1.0.0-205781)
 </div>
 
+## 졸업작품 전시 포스터
+
+[SafeURLink 전시 포스터 PDF 보기](./SafeURLink_Poster_Final.pdf)
+
 ## 1. 프로젝트 소개
 
 **SafeURLink**는 피싱 및 악성코드 유포에 사용되는 URL을 탐지하기 위한 확장 프로그램입니다. 여러 공개 위협 정보 소스에서 수집한 시그니처와 URL 구조를 분석하는 휴리스틱 기법을 결합하여 **위험 점수와 탐지 근거**를 제공하며, 브라우저의 `declarativeNetRequest(DNR)`를 이용하여 일부 고위험 URL의 접속을 차단합니다.
