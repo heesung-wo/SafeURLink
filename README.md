@@ -34,8 +34,6 @@ Chrome/Whale 확장 프로그램
 ...
 ```
 
-- GitHub 저장소: <https://github.com/heesung-wo/SafeURLink>
-- 배포된 공개 시그니처 피드: <https://heesung-wo.github.io/SafeURLink/signatures.json>
 - 원본 외부 API와 인증키는 GitHub Actions에서 사용하며 확장 프로그램은 공개 피드를 내려받습니다.
 - `safe-ur-link/`는 확장 프로그램이 설치되는 **내부 폴더 경로**입니다. 기존 로컬 DB 및 설치된 확장 프로그램과의 호환성을 위해 유지합니다.
 
