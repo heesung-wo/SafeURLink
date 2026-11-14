@@ -122,12 +122,11 @@ SafeURLink는 **외부 위협 정보 수집·배포 계층**과 **Chromium 기�
 | [Phishing.Database](https://github.com/Phishing-Database/Phishing.Database) | 피싱 URL 목록 |
 | [ThreatFox](https://threatfox.abuse.ch/) | 악성 침해 지표 기반 URL 정보 |
 
-GitHub Actions에서 원본 데이터를 처리하므로 **일반 확장 프로그램 사용자는 외부 위협 정보 API 키를 발급받을 필요가 없습니다.** 수집 스크립트를 직접 운영하려면 인증 정보와 각 출처의 데이터 이용·재배포 조건을 확인해야 하며, 인증키는 코드에 넣지 않고 GitHub Actions Secrets로 관리합니다.
+GitHub Actions에서 원본 데이터를 처리하므로 **일반 확장 프로그램 사용자는 외부 위협 정보 API 키를 발급받을 필요가 없습니다.** 
 
 - **GitHub Actions 예약 수집:** 한국 시간 기준 매일 **00:17** 실행하도록 설정 (`.github/workflows/update-signatures.yml`). 예약 작업은 지연되거나 누락될 수 있습니다.
 - **브라우저 측 자동 확인:** 한국 시간 기준 매일 **15:00** 공개 피드 확인. 브라우저가 종료되어 시각을 놓친 경우 다음 시작 시 보충 확인하도록 설계되었습니다.
 - **수동 갱신:** 확장 프로그램 설정의 **지금 업데이트** 버튼으로 갱신 요청 가능.
-- **피드 주소:** <https://heesung-wo.github.io/SafeURLink/signatures.json>
 
 ### DNR 규칙 상한
 
