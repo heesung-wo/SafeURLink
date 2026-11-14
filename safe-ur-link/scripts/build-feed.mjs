@@ -154,7 +154,7 @@ export async function buildFeed(env = {}, { collectors, previousFeed = null, now
   } else {
     for (const name of names) {
       try {
-        let rows = normalizeRows(name, await withRetry(name, () => collectors[name]()));
+        const rows = normalizeRows(name, await withRetry(name, () => collectors[name]()));
         // 수동 URL 검사는 이 전체 시그니처를 이용하므로 수집 단계에서 자르지 않습니다.
         // 주의: push(...rows)는 12만 건 이상에서 "Maximum call stack size exceeded"가 발생하므로 반복문을 쓴다.
         for (const r of rows) signatures.push(r);

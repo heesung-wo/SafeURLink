@@ -47,7 +47,7 @@ test('최초 설치에서 성공 기록이 없으면 곧바로 1회 확인한다
   assert.equal(nextAutomaticCheckAt(todayAfter, 0), todayAfter);
 });
 
-test('구버전 feedMeta.lastSuccess 기록도 마지막 확인으로 인정한다', () => {
+test('feedMeta.lastSuccess 기록도 마지막 확인 시각으로 인정한다', () => {
   assert.equal(lastCheckedTime({lastSuccess:yesterday}), yesterday);
   assert.equal(lastCheckedTime({lastSuccess:yesterday,lastCheckedAt:todaySlot}), todaySlot);
 });

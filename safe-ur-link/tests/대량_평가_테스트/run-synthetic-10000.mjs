@@ -100,7 +100,7 @@ export async function all() { return [...globalThis.__SafeURLinkTestRecords.valu
   const summary={
     experiment:'Synthetic fixture regression of production check() and buildProtectionRules(); NOT real-world accuracy',
     test_count:cases.length,real_feed_in_zip:2,synthetic_known_records:known.length,
-    direct_check_invocations:output.length,production_source_version:'0.6.9',
+    direct_check_invocations:output.length,project:'SafeURLink',
     dnr_rules_generated:rules.length,block_rules_generated:blocks.length,
     direct_check_group_results:counts,
     illustrative_fixture_confusion_matrix_strict:scores(r=>r.verdict==='Malicious'),

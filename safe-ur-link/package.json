@@ -1,12 +1,14 @@
 {
   "name": "safeurlink",
-  "version": "0.6.9",
   "private": true,
   "type": "module",
   "description": "SafeURLink 확장 프로그램의 시그니처 피드 빌드/테스트용 (확장 프로그램 자체에는 포함되지 않음)",
   "scripts": {
     "test": "node --test \"tests/기능_테스트/*.test.mjs\"",
-    "build:feed": "node scripts/build-feed.mjs"
+    "build:feed": "node scripts/build-feed.mjs",
+    "eval:synthetic": "node tests/대량_평가_테스트/run-synthetic-10000.mjs",
+    "stress:dnr": "node tests/대량_평가_테스트/run-dnr-stress-100000.mjs",
+    "export:csv": "node scripts/export-signatures-csv.mjs"
   },
   "engines": {
     "node": ">=20"

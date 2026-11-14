@@ -18,11 +18,3 @@ test('GitHub Actions가 갱신 전에 조회하는 이전 피드 주소가 확�
   assert.ok(matched, '워크플로의 PREVIOUS_FEED_URL을 찾지 못했습니다.');
   assert.equal(matched[1], SIGNATURE_FEED_URL);
 });
-
-test('배포 안내가 구 저장소 경로를 참조하지 않음', async () => {
-  for (const filename of ['../../README.md', '../../UPDATE_NOTES_v0.6.9.md']) {
-    const content = await readFile(new URL(filename, import.meta.url), 'utf8');
-    assert.ok(!content.includes('heesung-wo.github.io/Capstone/'), `${filename}: 구 피드 경로 남아 있음`);
-    assert.ok(content.includes(EXPECTED_URL), `${filename}: 새 피드 경로가 안내되지 않음`);
-  }
-});

@@ -53,7 +53,7 @@ test('DB UPSERT: 기존에 없는 URL도 삭제 없이 유지되고 동일 출�
   assert.equal(stored.get('ThreatFox|https://c.invalid/').meta.active, true);
 });
 
-test('구버전 로컬 데이터도 정상 갱신 소스에서만 과거 이력으로 전환하고 실패 소스는 변경하지 않음', async () => {
+test('기존 로컬 데이터는 정상 갱신 소스에서만 과거 이력으로 전환하고 실패 소스는 변경하지 않음', async () => {
   await mergeRecords([
     { source: 'URLhaus', url: 'https://old.invalid/', meta: { active: true } },
     { source: 'URLhaus', url: 'https://current.invalid/', meta: { active: true } },

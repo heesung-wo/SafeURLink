@@ -52,7 +52,7 @@ const settled = () => new Promise(resolve => setImmediate(resolve));
 await runAutomaticSync();
 await settled();
 
-test('구버전 6시간 nextAt가 남아 있어도 매일 15시 KST로 예약한다', async () => {
+test('이전 주기의 nextAt가 저장되어 있어도 매일 15시 KST로 예약한다', async () => {
   assert.equal(requests,0);
   assert.equal(alarm.scheduledTime,todaySlot);
   assert.equal(alarm.periodInMinutes,undefined);

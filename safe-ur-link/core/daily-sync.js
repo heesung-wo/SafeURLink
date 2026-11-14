@@ -1,6 +1,6 @@
 // SafeURLink 자동 피드 확인: 매일 15:00 KST에 한 번 확인한다.
 // 해당 시각에 브라우저가 꺼져 있었다면 다음 실행 때 누락된 확인을 수행한다.
-// 예약 시간은 GitHub Actions의 피드 생성 시각(12:17 KST)보다 여유 있게 잡는다.
+// 예약 시간은 GitHub Actions의 피드 생성 시각(00:00 KST)보다 여유 있게 잡는다.
 export const DAILY_SYNC_HOUR_KST = 15;
 export const DAILY_SYNC_MINUTE_KST = 0;
 const DAY_MS = 24 * 60 * 60_000;
@@ -34,6 +34,6 @@ export function nextAutomaticCheckAt(nowMs, lastCheckedAt = 0, retryAt = 0) {
 }
 
 export function lastCheckedTime(feedMeta = {}) {
-  // v0.6.7의 기존 피드 기록도 마이그레이션 없이 인식한다.
+  // 저장된 마지막 확인 시각이 다른 필드명에 있어도 호환되도록 인식한다.
   return Number(feedMeta.lastCheckedAt || feedMeta.lastSuccess || 0);
 }

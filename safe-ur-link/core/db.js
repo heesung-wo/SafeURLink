@@ -32,7 +32,7 @@ export async function mergeRecords(records, batchSize = 2500) {
   return written;
 }
 
-// 구버전 브라우저 DB에만 존재하는 항목도 삭제 대신 과거 이력으로 전환한다.
+// 이전에 저장된 DB 항목도 삭제 대신 과거 이력으로 전환한다.
 // 이번 수집이 'updated'인 출처만 대상으로 하며, 실패한 소스(retained)는 건드리지 않는다.
 export async function deactivateMissing(records, sourceStatus, previousGeneratedAt) {
   const succeeded = Object.entries(sourceStatus || {})

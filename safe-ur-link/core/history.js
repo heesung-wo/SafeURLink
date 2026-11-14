@@ -13,7 +13,7 @@ export function mergeHistory(previousRecords, newRecords, succeededSources, obse
   const succeeded = new Set(succeededSources);
   const out = new Map();
   const previousTime = isoOr(previousAt, observedAt);
-  // 기존 피드가 v0.6.1이면 active / lastObservedAt이 없으므로 이전 피드의 생성 시각을 사용한다.
+  // active / lastObservedAt 정보가 누락된 피드는 이전 피드 생성 시각을 기본값으로 사용한다.
   for (const row of previousRecords) {
     const url = normalizeUrl(row.url);
     if (!url || typeof row.source !== 'string') continue;

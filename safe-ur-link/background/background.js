@@ -3,7 +3,7 @@ import * as db from '../core/db.js';
 import { SIGNATURE_FEED_URL } from '../core/config.js';
 import { nextAutomaticCheckAt, lastCheckedTime } from '../core/daily-sync.js';
 import { downloadFeed } from '../core/remote-feed.js';
-import { buildProtectionRules, hostMatches, DEMO_SIGNATURES, sessionAllowCondition, REALTIME_FRESH_MS } from '../core/dnr.js';
+import { buildProtectionRules, hostMatches, sessionAllowCondition, REALTIME_FRESH_MS } from '../core/dnr.js';
 import { registerContextMenu, targetFromContext, resultPageUrl } from '../core/context-menu.js';
 
 const DEFAULTS = { realtime: true, allow: [], block: [] };
@@ -29,12 +29,8 @@ export async function check(raw) {
   if (s.allow.some(entry => hostMatches(host, entry))) return { ...base, verdict: 'No Threat Detected', score: 0, userList: 'allow', sources: [], reasons: [{ points: 0, text: '사용자 허용 목록에 등록된 도메인입니다' }] };
   if (s.block.some(entry => hostMatches(host, entry))) return { ...base, verdict: 'Malicious', score: 100, userList: 'block', sources: [], reasons: [{ points: 0, text: '사용자 차단 목록에 등록된 도메인입니다' }] };
 
+  // DB에 없는 시연용 URL을 임의로 악성 판정하지 않는다.
   const records = await db.lookup(url);
-  if (DEMO_SIGNATURES.includes(url) && !records.length) {
-    // 실제 피드를 수집한 뒤에는 시연용 내장 URL을 악성 판정하지 않는다.
-    const counts = await db.countBySource();
-    if (!Object.values(counts).some(n => n > 0)) records.push({ source: 'Demo', url, meta: {} });
-  }
   const historyOnly = records.length > 0 && records.every(r => {
     if (r.meta?.active === false) return true;
     const seen = Date.parse(r.meta?.lastObservedAt);
@@ -66,13 +62,14 @@ async function performSync(force) {
   if (force && feedMeta.lastAttempt && now - feedMeta.lastAttempt < MANUAL_COOLDOWN_MS) return { ok: !feedMeta.lastError, skipped: true, cooldown: true };
   try {
     const feed = await downloadFeed(SIGNATURE_FEED_URL);
-    const hasData = Object.values(await db.countBySource()).some(n => n > 0);
+    const sourceCounts = await db.countBySource();
+    const hasData = Object.values(sourceCounts).some(n => n > 0);
     let changed = false;
     if (feed.generatedAt !== feedMeta.generatedAt || !hasData) {
       // 기존 DB 레코드를 삭제하지 않고 변경된 시그니처를 추가/갱신한다.
       // 서버의 소스별 실패 시 해당 소스의 마지막 데이터는 그대로 남는다.
-      const hasReal = (await db.countBySource());
-      const realCount = Object.entries(hasReal).filter(([key]) => key !== 'Demo').reduce((sum, [, count]) => sum + count, 0);
+      const realCount = Object.entries(sourceCounts).filter(([key]) => key !== 'Demo')
+        .reduce((sum, [, count]) => sum + count, 0);
       if (!(feed.demoOnly && realCount)) {
         await db.mergeRecords(feed.records);
         await db.deactivateMissing(feed.records, feed.sourceStatus, feedMeta.generatedAt);
@@ -210,7 +207,7 @@ export function runAutomaticSync() {
 
 // ── 이벤트
 chrome.runtime.onInstalled.addListener(() => {
-  // 이전 버전(사용자가 API 키를 직접 입력)에서 저장된 키와 상태를 제거한다.
+  // 외부 API 키를 브라우저에 저장하지 않도록 남아 있는 키 및 상태를 정리한다.
   chrome.storage.local.remove(['authKey', 'phishKey', 'feedState', 'syncStatus']);
   ensureContextMenu().catch(console.error);
   rebuildRules().catch(console.error);

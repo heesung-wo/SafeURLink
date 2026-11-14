@@ -17,7 +17,6 @@ export const REALTIME_SOURCE_LIMITS = Object.freeze({
 export const MAX_BLOCK_HOSTS = 300;
 // 마지막 갱신이 너무 오래된 시그니처는 수동 검사 이력에만 남긴다.
 export const REALTIME_FRESH_MS = 7 * 24 * 60 * 60_000;
-export const DEMO_SIGNATURES = ['https://malware.test/demo', 'https://phishing.test/login'];
 const MAIN_FRAME = ['main_frame'];
 const escapeRegex = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -112,13 +111,12 @@ export function buildProtectionRules(settings, records, warningBase) {
     if (!grouped.has(u)) grouped.set(u, []);
     grouped.get(u).push(record);
   }
-  if (grouped.size === 0) {
-    for (const url of DEMO_SIGNATURES) grouped.set(url, [{ source: 'Demo', meta: {} }]);
-  }
+  // DB가 비어 있을 때는 임의의 Demo 규칙을 추가하지 않는다.
+  // 시연용 피드를 실제로 받은 경우에만 그 레코드에 따라 규칙을 생성한다.
   stats.candidateUrls = grouped.size;
 
   const candidatesBySource = new Map(Object.keys(REALTIME_SOURCE_LIMITS).map(s => [s, []]));
-  const allCandidates = new Map();
+  let eligibleCandidateCount = 0;
   for (const [url, recs] of grouped) {
     // 과거 수집 기록은 차단하지 않는다. 여러 출처에 동일 URL이 있으면 현재 목록에 남아있는 출처만 평가한다.
     const active = recs.filter(r => r.meta?.active !== false);
@@ -136,7 +134,7 @@ export function buildProtectionRules(settings, records, warningBase) {
       continue;
     }
     const row = { url, rank: rankOf(fresh) };
-    allCandidates.set(url, row);
+    eligibleCandidateCount++;
     for (const source of new Set(fresh.map(r => r.source))) {
       if (candidatesBySource.has(source)) candidatesBySource.get(source).push(row);
     }
@@ -166,7 +164,7 @@ export function buildProtectionRules(settings, records, warningBase) {
   stats.userAllowRules = allow.length;
   stats.total = rules.length;
   // 전체 DB 중 실시간 보호에 선정되지 못한 URL 수(소스별 제한 + DNR 전체 규칙 제한).
-  stats.quotaOverflowUrls = Math.max(0, allCandidates.size - stats.signatureRules);
+  stats.quotaOverflowUrls = Math.max(0, eligibleCandidateCount - stats.signatureRules);
   return { rules, stats };
 }
 

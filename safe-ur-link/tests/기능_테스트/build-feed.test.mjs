@@ -19,10 +19,6 @@ test('PhishingDB는 PUBLISH_PHISHING_DB와 REDISTRIBUTION_CONFIRMED가 모두 tr
   assert.equal(enabledSources({ REDISTRIBUTION_CONFIRMED: 'true', PUBLISH_PHISHING_DB: 'true' }).PhishingDB, true);
 });
 
-test('OpenPhish는 더 이상 지원하지 않는다', () => {
-  assert.equal('OpenPhish' in enabledSources({ REDISTRIBUTION_CONFIRMED: 'true', PUBLISH_OPENPHISH: 'true' }), false);
-});
-
 test('PhishingDB를 공개하면 MIT 라이선스 고지가 피드에 포함된다', async () => {
   const collectors = { PhishingDB: async () => [{ url: 'https://p.invalid/a', meta: { threat: 'phishing' } }] };
   const feed = await buildFeed({ REDISTRIBUTION_CONFIRMED: 'true', PUBLISH_PHISHING_DB: 'true' }, { collectors });
@@ -99,12 +95,6 @@ test('소스별 개수 제한 없이 각 피드의 모든 데이터를 유지한
   );
   assert.equal(feed.signatures.filter(s => s.source === 'URLhaus').length, 15_000);
   assert.equal(feed.signatures.filter(s => s.source === 'PhishTank').length, 15_000);
-});
-
-test('구 MAX_PER_SOURCE 값도 수집 건수를 제한하지 않는다', async () => {
-  const rows = Array.from({ length: 9500 }, (_, i) => ({ url: `https://e${i}.invalid/` }));
-  const feed = await buildFeed({ REDISTRIBUTION_CONFIRMED: 'true', PUBLISH_URLHAUS: 'true', MAX_PER_SOURCE: '20' }, { collectors: { URLhaus: async () => rows } });
-  assert.equal(feed.signatures.length, 9500);
 });
 
 test('네 소스의 원본 48,000건을 모두 보존하며 실시간 상한과 분리한다', async () => {

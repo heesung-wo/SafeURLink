@@ -7,12 +7,16 @@ const page = 'chrome-extension://exampleid/pages/warning/warning.html';
 const sig = (url, source='URLhaus', meta={}) => ({url, source, meta});
 const build = (s={}, records=[]) => buildProtectionRules({ realtime: true, allow: [], block: [], ...s }, records, page);
 
-test('기본 시연용 시그니처는 경고 페이지가 아닌 DNR block으로 처리한다', () => {
-  const { rules, stats } = build();
-  assert.equal(stats.signatureRules, 2);
-  assert.deepEqual(rules.map(x => x.id), [1,2]);
+test('빈 DB에는 가짜 차단 규칙을 추가하지 않고, 실제 수신한 Demo 레코드만 차단한다', () => {
+  const empty = build();
+  assert.equal(empty.stats.candidateUrls, 0);
+  assert.equal(empty.stats.signatureRules, 0);
+  assert.deepEqual(empty.rules, []);
+
+  const { rules, stats } = build({}, [sig('https://phishing.test/login', 'Demo')]);
+  assert.equal(stats.signatureRules, 1);
   const r = rules.find(x => x.condition.urlFilter === '|https://phishing.test/login|');
-  assert.deepEqual(r.action, {type:'block'});
+  assert.deepEqual(r.action, { type: 'block' });
   assert.equal(r.priority, 10);
   assert.deepEqual(r.condition.resourceTypes, ['main_frame']);
 });
@@ -129,7 +133,6 @@ test('유효하지 않은 도메인, 사용자 차단 300개 초과 등 제한�
 test('DNR 필터 메타 문자를 포함하면 과잉 차단 규칙 대신 DB 검사만 사용한다', () => {
   const {rules,stats} = build({}, [sig('https://bad.test/*')]);
   assert.equal(stats.unsupportedUrls,1);
-  assert.equal(stats.unsupportedUrls,1); // 차단되지 않은 이유별 통계만 유지
   assert.ok(!rules.some(r => r.condition.urlFilter?.includes('bad.test/')));
 });
 
