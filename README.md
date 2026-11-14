@@ -13,9 +13,9 @@ Chrome / Whale 등 Chromium 기반 브라우저에서 URL의 위험도를 분석
 ![Version](https://img.shields.io/badge/version-1.0.0-205781)
 </div>
 
-## 졸업작품 전시 포스터
+## PDF
 
-[SafeURLink 포스터](./SafeURLink_포스터.pdf)
+[SafeURLink 포스터](./SafeURLink_포스터.pdf) | [SafeURLink 최종 보고서](./SafeURLink_최종_보고서.pdf) | [SafeURLink 시연 영상]()
 
 ## 1. 프로젝트 소개
 
