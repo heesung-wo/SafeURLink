@@ -52,40 +52,38 @@ Chrome / Whale 등 Chromium 기반 브라우저에서 URL의 위험도를 분석
 
 SafeURLink는 **외부 위협 정보 수집·배포 계층**과 **Chromium 기반 브라우저 확장 프로그램 계층**으로 구성됩니다.
 
-## 4. 설치 및 실행
+## 4. 프로젝트 구조
 
-### 실행 환경
-
-- **브라우저:** Chrome 121 이상 또는 호환되는 Chromium 기반 브라우저 (주요 기능은 **Whale에서 검증**)
-- **개발 방식:** Chrome Extension Manifest V3
-- **사용 기술:** JavaScript, HTML, CSS, IndexedDB, `chrome.storage.local`, DNR API
-- **Node.js 20 이상:** 개발·테스트 및 시그니처 수집 스크립트 실행 시 필요. **확장 프로그램을 설치해서 사용하는 것만으로는 필요하지 않습니다.**
-
-### 확장 프로그램 설치
-
-1. 저장소를 다운로드하거나 복제합니다.
-
-   ```bash
-   git clone https://github.com/heesung-wo/SafeURLink.git
-   ```
-
-2. Chrome의 `chrome://extensions` 또는 Whale의 확장 프로그램 관리 화면에 접속하여 **개발자 모드**를 켭니다.
-3. **압축 해제된 확장 프로그램 로드**를 클릭합니다.
-4. 저장소 안의 **`safe-ur-link/` 폴더**를 선택합니다. (`manifest.json`이 있는 폴더를 선택해야 합니다.)
-5. SafeURLink의 **설정 → 위협 정보 업데이트 → 지금 업데이트**를 실행하여 최신 시그니처 데이터 및 규칙 적용 상태를 확인합니다.
-
-> [!NOTE]
-> 저장소에 포함된 `safe-ur-link/public/signatures.json`은 **2건의 시연용 데이터**입니다. 실제 공개 시그니처 피드는 GitHub Pages에서 별도로 수신합니다. 다운로드 또는 갱신이 실패하면 설정 화면의 상태를 확인하세요. 기존 설치 데이터가 필요하다면 확장 프로그램을 삭제하지 말고 해당 폴더의 파일을 변경한 다음 **새로고침**하세요.
-
-### 사용 방법
-
-1. **직접 검사:** 툴바의 SafeURLink 아이콘을 클릭하고 검사할 URL을 입력한 다음 **검사**를 누릅니다.
-2. **현재 탭 검사:** 팝업에서 **현재 탭 검사**를 누르면 활성 탭의 URL을 평가합니다.
-3. **우클릭 검사:** 웹페이지의 링크를 우클릭하거나 URL 문자열을 선택한 뒤 SafeURLink 검사 메뉴를 사용합니다.
-4. **실시간 보호:** 설정에서 보호 기능을 활성화하면 선정된 고위험 URL의 접속이 DNR 규칙에 따라 차단됩니다.
-5. **개인 설정:** 설정에서 허용·차단 도메인을 한 줄에 하나씩 입력하고 저장할 수 있습니다.
-
-**안전한 기능 시연:** 실제 악성 사이트에 방문하지 마세요. 사용자 경고 페이지는 일반 테스트용 도메인을 사용자 차단 목록에 넣어 확인할 수 있으며, 외부 시그니처 차단 규칙은 실제 URL 접속 대신 DNR의 `testMatchOutcome()` 가상 요청으로 검증할 수 있습니다.
+```text
+SafeURLink/
+├── .github/
+│   └── workflows/
+│       └── update-signatures.yml    # 위협 정보 수집 · 배포 자동화
+├── safe-ur-link/                  # 확장 프로그램 루트 (manifest.json 위치)
+│   ├── manifest.json
+│   ├── background/
+│   │   └── background.js          # Service Worker · 메시지 · 보호 규칙 관리
+│   ├── core/
+│   │   ├── common.js              # URL 정규화 · 휴리스틱 · 위험도 계산
+│   │   ├── db.js                  # IndexedDB 시그니처 관리
+│   │   ├── dnr.js                 # DNR 차단 후보 선정 · 규칙 생성
+│   │   ├── feeds.js               # 원본 위협 정보 수집
+│   │   ├── remote-feed.js         # 배포된 JSON 검증 · 다운로드
+│   │   └── daily-sync.js          # 자동 갱신 일정
+│   ├── pages/                     # popup · result · warning · options
+│   ├── shared/                    # 공통 화면 구성
+│   ├── assets/                    # CSS · 확장 프로그램 아이콘
+│   ├── scripts/                   # 피드 빌드 · CSV 내보내기
+│   ├── public/                    # GitHub Pages 배포 파일
+│   ├── tests/
+│   │   ├── 기능_테스트/
+│   │   ├── 대량_평가_테스트/
+│   │   └── 추가_정량검증/
+│   └── package.json
+├── README.md
+├── system-architecture.png
+└── SafeURLink_최종결과_보고서_프로토(20261114-093845).docx
+```
 
 ## 5. 위험도 산정 방식
 
@@ -141,39 +139,6 @@ GitHub Actions에서 원본 데이터를 처리하므로 **일반 확장 프로�
 | **외부 시그니처 규칙 합계 상한** | **29,700** |
 
 별도로 사용자 차단 도메인은 최대 **300개**까지 관리할 수 있으며, 허용 규칙도 포함하여 전체 동적 DNR 규칙 수는 코드상 **30,000개**로 제한합니다. 여러 출처에 같은 URL이 있거나 필터에 적용할 수 없는 URL이 있는 경우 실제 규칙 수는 상한보다 적을 수 있습니다. 외부 위협 규칙은 주로 **정확한 URL과 최상위 페이지 이동(`main_frame`)**을 대상으로 하므로, 한 URL이 등록되어 있다고 해서 동일 도메인의 모든 경로가 차단되는 것은 아닙니다.
-
-## 7. 프로젝트 구조
-
-```text
-SafeURLink/
-├── .github/
-│   └── workflows/
-│       └── update-signatures.yml    # 위협 정보 수집 · 배포 자동화
-├── safe-ur-link/                  # 확장 프로그램 루트 (manifest.json 위치)
-│   ├── manifest.json
-│   ├── background/
-│   │   └── background.js          # Service Worker · 메시지 · 보호 규칙 관리
-│   ├── core/
-│   │   ├── common.js              # URL 정규화 · 휴리스틱 · 위험도 계산
-│   │   ├── db.js                  # IndexedDB 시그니처 관리
-│   │   ├── dnr.js                 # DNR 차단 후보 선정 · 규칙 생성
-│   │   ├── feeds.js               # 원본 위협 정보 수집
-│   │   ├── remote-feed.js         # 배포된 JSON 검증 · 다운로드
-│   │   └── daily-sync.js          # 자동 갱신 일정
-│   ├── pages/                     # popup · result · warning · options
-│   ├── shared/                    # 공통 화면 구성
-│   ├── assets/                    # CSS · 확장 프로그램 아이콘
-│   ├── scripts/                   # 피드 빌드 · CSV 내보내기
-│   ├── public/                    # GitHub Pages 배포 파일
-│   ├── tests/
-│   │   ├── 기능_테스트/
-│   │   ├── 대량_평가_테스트/
-│   │   └── 추가_정량검증/
-│   └── package.json
-├── README.md
-├── system-architecture.png
-└── SafeURLink_최종결과_보고서_프로토(20261114-093845).docx
-```
 
 ---
 
