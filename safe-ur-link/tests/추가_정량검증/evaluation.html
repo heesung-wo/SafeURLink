@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>SafeURLink 추가 정량 검증</title>
+<style>
+body{max-width:850px;margin:30px auto;padding:0 22px;color:#223444;font:15px/1.65 system-ui,sans-serif;background:#f7f9fc}
+section{background:white;border:1px solid #d9e1e9;border-radius:12px;padding:20px;margin:18px 0}
+h1{margin-bottom:5px}h2{font-size:19px;margin:0 0 8px}button{background:#236fac;color:#fff;border:0;border-radius:7px;padding:9px 15px;cursor:pointer}button:disabled{opacity:.45;cursor:wait}input{padding:7px}pre{white-space:pre-wrap;background:#eef3f8;padding:14px;border-radius:8px;min-height:35px;overflow-wrap:anywhere}
+.small{color:#587082;font-size:13px}.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}#error{color:#c33}
+</style>
+</head>
+<body>
+<h1>SafeURLink 추가 검증</h1>
+<p class="small">확장 프로그램 내부의 현재 DB와 DNR 규칙을 검사하는 정량 검증 도구입니다. 악성 사이트에 접속하지 않습니다. 기존 프로그램 설정·DB는 변경하지 않습니다.</p>
+<section>
+<h2>0. 환경 확인</h2>
+<button id="status">상태 확인</button>
+<pre id="statusResult">아직 확인하지 않았습니다.</pre>
+</section>
+<section>
+<h2>1. 등록된 활성 시그니처 인식률</h2>
+<p>네 소스(URLhaus·PhishTank·PhishingDB·ThreatFox)에서 각각 최대 50개씩, 총 약 200개를 선택합니다. 중복 URL은 한 번만 검사하고 현재 DB에 저장된 전체 URL로 직접 검사합니다.</p>
+<button id="registered">검사 시작</button>
+<pre id="registeredResult">검사를 실행해 주세요.</pre>
+<button id="registeredDownload" disabled>결과 CSV 저장</button>
+</section>
+<section>
+<h2>2. 정상 URL 후보 오경고 검사</h2>
+<p>포함된 <code>SafeURLink_normal_candidates_500.csv</code> 파일을 선택합니다. <code>label=0</code>인 URL만 검토하며, 아래 최대 검사 수만큼 검사합니다.</p>
+<div class="row"><input id="normalFile" type="file" accept=".csv,text/csv"/><label>최대 검사 건수 <input id="normalLimit" type="number" min="1" max="1000" value="500" style="width:85px"/></label></div>
+<p><button id="normal">검사 시작</button></p>
+<pre id="normalResult">검사를 실행해 주세요.</pre>
+<button id="normalDownload" disabled>결과 CSV 저장</button>
+</section>
+<section>
+<h2>3. 실제 등록된 DNR block 규칙 일치율</h2>
+<p>현재 설치된 block 규칙에서 ID 순으로 골고루 50개를 선정하고 <code>testMatchOutcome()</code>으로 가상 요청을 검사합니다.</p>
+<button id="dnr">검사 시작</button>
+<pre id="dnrResult">검사를 실행해 주세요.</pre>
+<button id="dnrDownload" disabled>결과 CSV 저장</button>
+</section>
+<section>
+<h2>4. 결과 요약 다운로드</h2>
+<p>완료된 검사 결과만 포함합니다. 보고서에는 실제로 출력된 숫자만 기록하세요.</p>
+<button id="summary">요약 JSON 다운로드</button>
+<p id="error"></p>
+</section>
+<script type="module" src="evaluation.js"></script>
+</body>
+</html>
