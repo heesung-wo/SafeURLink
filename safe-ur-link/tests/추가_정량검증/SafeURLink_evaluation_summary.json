@@ -1,0 +1,57 @@
+{
+  "generatedAt": "2026-11-14T08:38:05.742Z",
+  "environment": {
+    "time": "2026-11-14T08:28:21.436Z",
+    "counts": {
+      "URLhaus": 116737,
+      "PhishTank": 48341,
+      "PhishingDB": 788967,
+      "ThreatFox": 1530,
+      "Demo": 0
+    },
+    "ruleCountStored": 26513,
+    "feedGeneratedAt": "2026-11-13T21:18:47.992Z",
+    "feedLastAppliedAt": 1794641006129
+  },
+  "registered": {
+    "time": "2026-11-14T08:28:25.828Z",
+    "sampled": 200,
+    "errors": 0,
+    "checked": 200,
+    "verdicts": {
+      "Malicious": 200
+    },
+    "recognized": 200,
+    "recognitionRate": 100,
+    "selectedBySource": {
+      "URLhaus": 50,
+      "PhishTank": 50,
+      "PhishingDB": 50,
+      "ThreatFox": 50
+    },
+    "limitation": "현재 DB 활성·최신 URL을 입력한 조회 기능 시험(독립적인 악성 URL 탐지율 아님)"
+  },
+  "normal": {
+    "time": "2026-11-14T08:37:49.334Z",
+    "filename": "SafeURLink_normal_candidates_500.csv",
+    "normalCandidates": 500,
+    "errors": 0,
+    "checked": 500,
+    "verdicts": {
+      "No Threat Detected": 500
+    },
+    "alarms": 0,
+    "candidateWarningRate": 0,
+    "limitation": "제공 데이터의 정상 후보 라벨을 전제한 표본 오경고율. 전체 정상 사이트 오탐률이 아님"
+  },
+  "dnr": {
+    "time": "2026-11-14T08:37:58.729Z",
+    "dynamicBlockRules": 26513,
+    "sampled": 50,
+    "errors": 0,
+    "checked": 50,
+    "matched": 50,
+    "virtualMatchRate": 100,
+    "limitation": "가상 요청 결과. 실제 악성 사이트 방문 또는 전체 위협 차단율 측정이 아님"
+  }
+}
