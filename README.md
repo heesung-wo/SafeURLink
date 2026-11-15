@@ -64,7 +64,6 @@ SafeURLink/
 │   └── workflows/
 │       └── update-signatures.yml    # 위협 정보 수집 · 배포 자동화
 ├── safe-ur-link/                  # 확장 프로그램 루트 (manifest.json 위치)
-│   ├── manifest.json
 │   ├── background/
 │   │   └── background.js          # Service Worker · 메시지 · 보호 규칙 관리
 │   ├── core/
@@ -72,6 +71,9 @@ SafeURLink/
 │   │   ├── db.js                  # IndexedDB 시그니처 관리
 │   │   ├── dnr.js                 # DNR 차단 후보 선정 · 규칙 생성
 │   │   ├── feeds.js               # 원본 위협 정보 수집
+│   │   ├── config.js              # GitHub Pages 시그니처 피드 주소 설정
+│   │   ├── context-menu.js        # 선택한 URL 문자열의 우클릭 검사 메뉴 관리
+│   │   ├── history.js             # 수집 상태에 따른 시그니처 활성 이력 병합
 │   │   ├── remote-feed.js         # 배포된 JSON 검증 · 다운로드
 │   │   └── daily-sync.js          # 자동 갱신 일정
 │   ├── pages/                     # popup · result · warning · options
@@ -84,6 +86,8 @@ SafeURLink/
 │   │   ├── 대량_평가_테스트/
 │   │   └── 추가_정량검증/
 │   └── package.json
+│   └── manifest.json
+│   └── 설치 및 테스트.txt
 ├── README.md
 ```
 
