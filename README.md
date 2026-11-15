@@ -15,7 +15,7 @@ Chrome / Whale 등 Chromium 기반 브라우저에서 URL의 위험도를 분석
 
 ## PDF
 
-[SafeURLink 포스터](./SafeURLink_포스터.pdf) | [SafeURLink 최종 보고서](./SafeURLink_최종_보고서.pdf) | [SafeURLink 시연 영상]()
+[SafeURLink 포스터](./SafeURLink_포스터.pdf) | [SafeURLink 최종 보고서](./SafeURLink_최종_보고서.pdf) | [SafeURLink 시연 영상](https://youtu.be/cwxHzYkFNhM?si=U8KuPUbNGOlUx738)
 
 ## 1. 프로젝트 소개
 
