@@ -85,7 +85,6 @@ SafeURLink/
 │   │   └── 추가_정량검증/
 │   └── package.json
 ├── README.md
-├── system-architecture.png
 ```
 
 ## 5. 위험도 산정 방식
