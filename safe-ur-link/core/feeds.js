@@ -1,8 +1,6 @@
-// 위협 인텔리전스 수집기. 각 함수는 [{url, meta}]를 반환한다.
-// 실제 악성 URL에 접속하지 않고, 정보 제공자의 공식 피드만 다운로드한다.
-// 반환되는 URL은 정규화 전 원본이며, 수집 후 빌드 스크립트에서 정규화한다.
-// 원본 API의 호출 주기는 GitHub Actions에서 관리한다.
-
+// 위협 인텔리전스 수집기. 각 함수는 [{url, meta}]를 반환
+// 실제 악성 URL에 접속하지 않고, 정보 제공자의 공식 피드만 다운로드
+// 반환되는 URL은 정규화 전 원본이며, 수집 후 빌드 스크립트에서 정규화
 function needKey(source) {
   const error = new Error(`${source}: 무료 abuse.ch Auth-Key가 필요합니다 (https://auth.abuse.ch/)`);
   error.code = 'AUTH_REQUIRED';
@@ -62,7 +60,7 @@ function validHttpURL(url) {
 
 export async function urlhaus({ authKey = '' } = {}) {
   if (!authKey.trim()) needKey('URLhaus');
-  // 2026년 공식 공개 문서의 인증된 CSV Export 경로. 헤더가 아닌 URL 경로에 키가 들어간다.
+  // 2026년 공식 공개 문서의 인증된 CSV Export 경로.
   const endpoint = `https://urlhaus-api.abuse.ch/v2/files/exports/${encodeURIComponent(authKey.trim())}/recent.csv`;
   const response = await getResponse(endpoint);
   const text = await response.text();
@@ -94,9 +92,8 @@ export async function urlhaus({ authKey = '' } = {}) {
   return records;
 }
 
-// PhishTank 공식 다운로드 피드는 JSON/CSV 형태가 존재한다.
-// 인증 경로에서 404를 받으면 파일 형식을 바꿔 보고, 마지막으로 공식 공개 피드를 확인한다.
-// 401/403/429/509 및 서버 장애는 우회하지 않고 상위 빌드 재시도/보존 정책에 맡긴다.
+// PhishTank 공식 다운로드 피드는 JSON/CSV 형태가 존재
+// 인증 경로에서 404를 받으면 파일 형식을 바꿔 보고, 마지막으로 공식 공개 피드를 확인
 export async function phishtank({ phishKey = '', userAgent = '', onFallback = () => {} } = {}) {
   const key = phishKey.trim();
   const base = 'https://data.phishtank.com/data/';
@@ -119,7 +116,7 @@ export async function phishtank({ phishKey = '', userAgent = '', onFallback = ()
       response = await getResponse(candidate.url, opts);
     } catch (error) {
       if (error.httpStatus !== 404) throw error;
-      // URL에 인증키가 포함되어 있으므로 상세 URL을 로그로 기록하지 않는다.
+      // URL에 인증키가 포함되어 있으므로 상세 URL을 로그로 기록 X
       if (i < candidates.length - 1) onFallback(`PhishTank: ${candidate.label} HTTP 404 → 다른 공식 다운로드 형식으로 재시도`);
       continue;
     }
@@ -151,7 +148,7 @@ export async function phishtank({ phishKey = '', userAgent = '', onFallback = ()
       url: e.url,
       meta: {
         verified: e.verified === 'yes' || e.verified === true,
-        valid: true, // 공식 online-valid 피드: 커뮤니티가 검증한 유효 URL
+        valid: true,  // 공식 online-valid 피드: 커뮤니티가 검증한 유효 URL
         online: e.online === 'yes' || e.online === true,
         threat: 'phishing',
         target: e.target || undefined,
@@ -166,13 +163,11 @@ export async function phishtank({ phishKey = '', userAgent = '', onFallback = ()
   throw new Error('PhishTank: 공식 JSON/CSV 다운로드 경로가 모두 HTTP 404입니다. PHISHTANK_KEY와 파일 다운로드 권한을 확인하세요.');
 }
 
-// Phishing.Database (MIT 라이선스). 공식 데이터 파일은 phish.co.za 에서 제공한다.
-// 프로젝트가 직접 HTTP 상태를 점검해 분류한 "ACTIVE(또는 아직 활성일 수 있는)" 링크 목록이다.
+// Phishing.Database (MIT 라이선스). 공식 데이터 파일은 phish.co.za 에서 제공
 export const PHISHING_DB_URL = 'https://phish.co.za/latest/phishing-links-ACTIVE.txt';
 export const PHISHING_DB_FALLBACK_URL = 'https://raw.githubusercontent.com/Phishing-Database/Phishing.Database/master/phishing-links-ACTIVE.txt';
 
-// 공식 서버의 일시 오류/연결 실패/데이터 형식 오류에만 미러를 사용한다.
-// 403·429 등 접근 금지/호출 제한은 우회하지 않는다.
+// 공식 서버의 일시 오류/연결 실패/데이터 형식 오류에만 미러를 사용
 export async function phishingDatabase({ userAgent = '', onFallback = () => {} } = {}) {
   const opts = userAgent ? { headers: { 'User-Agent': userAgent } } : {};
   const parse = text => {
@@ -180,7 +175,7 @@ export async function phishingDatabase({ userAgent = '', onFallback = () => {} }
     const records = text.split(/\r?\n/).map(s => s.trim())
       .filter(s => s && !s.startsWith('#') && validHttpURL(s))
       .map(url => ({ url, meta: { threat: 'phishing' } }));
-    // ACTIVE 데이터에는 등록시각이나 커뮤니티 검증 여부 정보가 없다.
+    // ACTIVE 데이터에는 등록시각이나 커뮤니티 검증 여부 정보 없음
     if (!records.length) throw new Error('PhishingDB: 유효한 URL이 없는 파일입니다.');
     return records;
   };
@@ -214,7 +209,7 @@ export async function threatfox({ authKey = '' } = {}) {
     .map(e => ({
       url: e.ioc,
       meta: {
-        verified: false, // 제보된 IOC를 임의로 검증 완료로 표시하지 않음
+        verified: false,  // 제보된 IOC를 임의로 검증 완료로 표시하지 않음
         confidence: Number(e.confidence_level) || 0,
         threat: e.threat_type,
         malware: e.malware_printable,
