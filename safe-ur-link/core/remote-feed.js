@@ -33,7 +33,7 @@ export function validateFeed(data) {
     if (seen.has(id)) continue;
     seen.add(id);
     const m = row.meta && typeof row.meta === 'object' && !Array.isArray(row.meta) ? row.meta : {};
-    // 기존 점수 계산에 필요한 비민감 필드만 보관. 외부에서 임의의 객체를 통째로 저장하지 않는다.
+    // 기존 점수 계산에 필요한 비민감 필드만 보관. 외부에서 임의의 객체를 통째로 저장 X
     const meta = {
       online: m.online === true,
       verified: m.verified === true,
@@ -65,7 +65,7 @@ export async function downloadFeed(url, fetchFn = fetch) {
     res = await fetchFn(url, { cache: 'no-store', credentials: 'omit' });
   } catch (e) { throw new Error(`시그니처 서버 연결 실패: ${e.message || e}`); }
   if (!res.ok) throw new Error(`시그니처 서버 HTTP ${res.status}`);
-  // html 오류 문서, 인증 페이지 등을 거부한다.
+  // html 오류 문서, 인증 페이지 등을 거부
   const body = await res.text();
   if (/^\s*<!doctype\s+html|^\s*<html\b/i.test(body)) throw new Error('시그니처 대신 HTML 페이지가 반환되었습니다. Pages 배포 설정을 확인하세요.');
   let data;
