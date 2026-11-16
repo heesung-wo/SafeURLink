@@ -85,8 +85,8 @@ SafeURLink/
 │   │   ├── 기능_테스트/
 │   │   ├── 대량_평가_테스트/
 │   │   └── 추가_정량검증/
-│   └── package.json
-│   └── manifest.json
+│   ├── package.json
+│   ├── manifest.json
 │   └── 설치 및 테스트.txt
 ├── README.md
 ```
