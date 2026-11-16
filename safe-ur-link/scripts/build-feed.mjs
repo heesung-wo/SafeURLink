@@ -12,7 +12,7 @@ import { urlhaus, phishtank, phishingDatabase, threatfox } from '../core/feeds.j
 import { validateFeed, SCHEMA_VERSION } from '../core/remote-feed.js';
 import { mergeHistory } from '../core/history.js';
 
-// 수집 단계에서는 소스별 고정 건수 제한을 적용 X
+// 수집 단계에서는 소스별 고정 건수 제한 적용 X
 // 해당 소스의 현재 피드가 제공한 HTTP(S) URL을 정규화/중복 제거하여 모두 배포
 // 실시간 보호에 적용할 소스별 건수와 선별 우선순위는 core/dnr.js에서만 관리
 
@@ -43,8 +43,7 @@ export const NOTICES = {
 };
 
 // 기존 workflow의 actions/cache 경로를 실제로 사용
-// 당일 한 번 성공적으로 받은 PhishTank 공개 데이터는 인증키 없이 로컬 캐시에 기록해
-// 같은 UTC 날짜의 재실행에서 중복 다운로드 회피, 오래되거나 잘못된 캐시는 무시
+// 당일 한 번 성공적으로 받은 PhishTank 공개 데이터는 인증키 없이 로컬 캐시에 기록해 같은 UTC 날짜의 재실행에서 중복 다운로드 회피, 오래되거나 잘못된 캐시는 무시
 const PHISHTANK_CACHE_FILE = fileURLToPath(new URL('../.cache/phishtank-daily.json', import.meta.url));
 export async function cachedPhishTank(collect, {
   cacheFile = PHISHTANK_CACHE_FILE,
@@ -129,7 +128,7 @@ export async function buildFeed(env = {}, { collectors, previousFeed = null, now
   const names = Object.keys(enabled).filter(n => enabled[n]);
   const secrets = [env.ABUSE_CH_AUTH_KEY, env.PHISHTANK_KEY].filter(Boolean);
   const redact = msg => secrets.reduce((s, k) => s.split(k).join('***'), String(msg));
-  // OPTIONAL_SOURCES(쉼표 구분)가 실패하면 해당 소스의 직전 배포 기록을 재사용
+  // OPTIONAL_SOURCES(쉼표 구분)가 실패하면 해당 소스의 직전 배포 기록 재사용
   // 새로운 URL이 없더라도 기존 수집 기록은 유지
   const optional = new Set(String(env.OPTIONAL_SOURCES || '').split(',').map(x => x.trim()).filter(Boolean));
   const withRetry = async (name, fn) => {
@@ -200,11 +199,11 @@ export async function buildFeed(env = {}, { collectors, previousFeed = null, now
       ? { notices: names.filter(n => NOTICES[n] && signatures.some(r => r.source === n)).map(n => ({ source: n, ...NOTICES[n] })) } : {}),
     ...(signatures.length ? {} : { emptyDataset: true })
   };
-  validateFeed(feed); // 확장 프로그램이 거부할 형식이면 여기서 빌드를 실패
+  validateFeed(feed);  // 확장 프로그램이 거부할 형식이면 여기서 빌드 실패
   return feed;
 }
 
-// 이전 공개 피드를 불러와 서버 쪽에서도 누적 이력을 보존
+// 이전 공개 피드를 불러와 서버 쪽에서도 누적 이력 보존
 export async function loadPreviousFeed(url, fetchFn = fetch) {
   if (!url) return null;
   if (!/^https:\/\//i.test(url)) throw new Error('PREVIOUS_FEED_URL은 HTTPS 주소여야 합니다.');
