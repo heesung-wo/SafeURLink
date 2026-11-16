@@ -1,5 +1,5 @@
-// 드래그한 URL 문자열(selectionText)만 검사한다.
-// 링크의 실제 목적지(linkUrl)나 현재 페이지 주소(pageUrl)는 사용하지 않는다.
+// 드래그한 URL 문자열(selectionText)만 검사.
+// 링크의 실제 목적지(linkUrl)나 현재 페이지 주소(pageUrl)는 사용 X
 export const SELECTED_URL_MENU_ID = 'check-selection';
 
 export const CONTEXT_MENUS = Object.freeze([
@@ -10,7 +10,7 @@ export const CONTEXT_MENUS = Object.freeze([
   })
 ]);
 
-// 선택 문구가 없으면 다른 필드로 대체하지 않는다.
+// 선택 문구가 없으면 다른 필드로 대체 X
 export function targetFromContext(info) {
   if (!info) return null;
   if (info.menuItemId === SELECTED_URL_MENU_ID) {
@@ -20,9 +20,7 @@ export function targetFromContext(info) {
   return null;
 }
 
-// 평범한 선택 문구(예: '로그인' 또는 '여기를 클릭')를 URL처럼 검사하지 않는다.
-// 명시적 http(s) URL 또는 점을 포함하는 도메인/IP, localhost만 허용한다.
-// 선택 텍스트를 다른 주소로 추측하거나 치환하지 않는다.
+// 명시적 http(s) URL 또는 점을 포함하는 도메인/IP, localhost만 허용
 export function isSelectedUrl(value) {
   if (typeof value !== 'string') return false;
   const raw = value.trim();
@@ -43,7 +41,7 @@ export function resultPageUrl(runtime, selected) {
   return `${runtime.getURL('pages/result/result.html')}?${params.toString()}`;
 }
 
-// MV3 서비스 워커가 재시작돼도 메뉴 중복 생성 없이 선택 URL 검사 메뉴만 등록한다.
+// MV3 서비스 워커가 재시작돼도 메뉴 중복 생성 없이 선택 URL 검사 메뉴만 등록
 export async function registerContextMenu(api) {
   await new Promise((resolve, reject) => {
     api.contextMenus.removeAll(() => {
