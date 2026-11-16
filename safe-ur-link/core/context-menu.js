@@ -10,7 +10,7 @@ export const CONTEXT_MENUS = Object.freeze([
   })
 ]);
 
-// 선택 문구가 없으면 다른 필드로 대체 X
+// 선택 문구가 없으면 검사하지 않음
 export function targetFromContext(info) {
   if (!info) return null;
   if (info.menuItemId === SELECTED_URL_MENU_ID) {
