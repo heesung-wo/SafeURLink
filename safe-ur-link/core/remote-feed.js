@@ -65,7 +65,7 @@ export async function downloadFeed(url, fetchFn = fetch) {
     res = await fetchFn(url, { cache: 'no-store', credentials: 'omit' });
   } catch (e) { throw new Error(`시그니처 서버 연결 실패: ${e.message || e}`); }
   if (!res.ok) throw new Error(`시그니처 서버 HTTP ${res.status}`);
-  // html 오류 문서, 인증 페이지 등을 거부
+  // html 오류 문서, 인증 페이지 등 거부
   const body = await res.text();
   if (/^\s*<!doctype\s+html|^\s*<html\b/i.test(body)) throw new Error('시그니처 대신 HTML 페이지가 반환되었습니다. Pages 배포 설정을 확인하세요.');
   let data;
