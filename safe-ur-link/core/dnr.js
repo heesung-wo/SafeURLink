@@ -116,7 +116,8 @@ export function buildProtectionRules(settings, records, warningBase) {
   const candidatesBySource = new Map(Object.keys(REALTIME_SOURCE_LIMITS).map(s => [s, []]));
   let eligibleCandidateCount = 0;
   for (const [url, recs] of grouped) {
-    // 과거 수집 기록은 차단 X. 여러 출처에 동일 URL이 있으면 현재 목록에 남아있는 출처만 평가
+    // 과거 수집 기록은 차단 대상에서 제외. 
+    // 여러 출처에 동일 URL이 있으면 현재 목록에 남아있는 출처만 평가
     const active = recs.filter(r => r.meta?.active !== false);
     if (!active.length) { stats.historicalUrls++; continue; }
     const fresh = active.filter(r => {
