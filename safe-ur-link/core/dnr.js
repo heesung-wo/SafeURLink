@@ -80,7 +80,7 @@ export function buildProtectionRules(settings, records, warningBase) {
 
   const rules = [];
   // 1. 사용자 지정 도메인 전체 차단: 원래 URL을 해시로 보존
-  // urlFilter로 일괄 리다이렉트할 때 발생하던 '경고 후 루트 URL만 접속' 오류를 방지
+  // urlFilter로 일괄 리다이렉트할 때 발생하던 '경고 후 루트 URL만 접속' 오류 방지
   for (let i = 0; i < block.length; i++) {
     const h = escapeRegex(block[i]);
     rules.push({
@@ -95,14 +95,14 @@ export function buildProtectionRules(settings, records, warningBase) {
     });
   }
 
-  // 2. 사용자 허용 목록: 실시간 보호 대상 도메인에 예외를 부여
+  // 2. 사용자 허용 목록: 실시간 보호 대상 도메인에 예외 부여
   for (let i = 0; i < allow.length; i++) rules.push({
     id: 200001 + i, priority: 30, action: { type: 'allow' },
     condition: { urlFilter: `||${allow[i]}^`, resourceTypes: MAIN_FRAME }
   });
 
-  // 3. 전체 DB에 저장된 고유 URL을 분류
-  // 수동 URL 검사는 이와 무관하게 IndexedDB 전체를 조회
+  // 3. 전체 DB에 저장된 고유 URL 분류
+  // 수동 URL 검사는 이와 무관하게 IndexedDB 전체 조회
   const grouped = new Map();
   for (const record of records) {
     const u = normalizeUrl(record.url);
@@ -110,13 +110,13 @@ export function buildProtectionRules(settings, records, warningBase) {
     if (!grouped.has(u)) grouped.set(u, []);
     grouped.get(u).push(record);
   }
-  // DB가 비어 있을 때는 임의의 Demo 규칙을 추가 X
+  // DB가 비어 있을 때는 임의의 Demo 규칙 추가 X
   stats.candidateUrls = grouped.size;
 
   const candidatesBySource = new Map(Object.keys(REALTIME_SOURCE_LIMITS).map(s => [s, []]));
   let eligibleCandidateCount = 0;
   for (const [url, recs] of grouped) {
-    // 과거 수집 기록은 차단하지 않는다. 여러 출처에 동일 URL이 있으면 현재 목록에 남아있는 출처만 평가
+    // 과거 수집 기록은 차단 X. 여러 출처에 동일 URL이 있으면 현재 목록에 남아있는 출처만 평가
     const active = recs.filter(r => r.meta?.active !== false);
     if (!active.length) { stats.historicalUrls++; continue; }
     const fresh = active.filter(r => {
@@ -138,7 +138,7 @@ export function buildProtectionRules(settings, records, warningBase) {
     }
   }
 
-  // 4. '실시간 보호 전용' 각 소스 상한만큼 우선순위 상위 URL을 선정
+  // 4. '실시간 보호 전용' 각 소스 상한만큼 우선순위 상위 URL 선정
   // URLhaus 9000 / PhishTank 9000 / PhishingDB 9000 / ThreatFox 2700.
   // 서로 다른 소스에서 나온 동일 URL은 규칙 하나로 통합
   const selected = new Map();
