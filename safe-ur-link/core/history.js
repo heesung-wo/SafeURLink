@@ -1,7 +1,6 @@
 // GitHub Actions와 브라우저에서 공통으로 사용하는 누적 시그니처 규칙.
-// 수집 성공: 이번 목록에 있는 URL만 현재 활성 이력(active=true)로 갱신하고,
-// 이번 목록에서 빠진 과거 URL은 보관하되 active=false로 전환한다.
-// 수집 실패: 해당 소스의 기존 URL/active/마지막 확인 시각을 절대 변경하지 않는다.
+// 수집 성공: 이번 목록에 있는 URL만 현재 활성 이력(active=true)로 갱신하고, 이번 목록에서 빠진 과거 URL은 보관하되 active=false로 전환
+// 수집 실패: 해당 소스의 기존 URL/active/마지막 확인 시각을 절대 변경 X
 import { normalizeUrl } from './common.js';
 
 const isoOr = (date, fallback) => {
@@ -13,7 +12,7 @@ export function mergeHistory(previousRecords, newRecords, succeededSources, obse
   const succeeded = new Set(succeededSources);
   const out = new Map();
   const previousTime = isoOr(previousAt, observedAt);
-  // active / lastObservedAt 정보가 누락된 피드는 이전 피드 생성 시각을 기본값으로 사용한다.
+  // active / lastObservedAt 정보가 누락된 피드는 이전 피드 생성 시각을 기본값으로 사용
   for (const row of previousRecords) {
     const url = normalizeUrl(row.url);
     if (!url || typeof row.source !== 'string') continue;
