@@ -1,5 +1,5 @@
 // GitHub Actions에서 실행되는 시그니처 수집 스크립트.
-// 비밀 키는 환경변수로만 읽고, 결과물(public/signatures.json)에는 URL과 최소 메타데이터만 담는다.
+// 비밀 키는 환경변수로만 읽고, 결과물(public/signatures.json)에는 URL과 최소 메타데이터만
 //   ABUSE_CH_AUTH_KEY  : URLhaus / ThreatFox
 //   PHISHTANK_KEY      : PhishTank (선택)
 //   PHISHTANK_USER_AGENT : PhishTank 요청에 쓸 식별 가능한 User-Agent
@@ -12,15 +12,15 @@ import { urlhaus, phishtank, phishingDatabase, threatfox } from '../core/feeds.j
 import { validateFeed, SCHEMA_VERSION } from '../core/remote-feed.js';
 import { mergeHistory } from '../core/history.js';
 
-// 수집 단계에서는 소스별 고정 건수 제한을 적용하지 않습니다.
-// 해당 소스의 현재 피드가 제공한 HTTP(S) URL을 정규화/중복 제거하여 모두 배포합니다.
-// 실시간 보호에 적용할 소스별 건수와 선별 우선순위는 core/dnr.js에서만 관리합니다.
+// 수집 단계에서는 소스별 고정 건수 제한을 적용 X
+// 해당 소스의 현재 피드가 제공한 HTTP(S) URL을 정규화/중복 제거하여 모두 배포
+// 실시간 보호에 적용할 소스별 건수와 선별 우선순위는 core/dnr.js에서만 관리
 
-// 일시적인 오류(5xx, 429, 네트워크 실패)만 재시도한다. 401/403/404 같은 설정 오류는 재시도해도 소용없으므로 바로 실패시킨다.
+// 일시적인 오류(5xx, 429, 네트워크 실패)만 재시도
 const RETRY_DELAYS_MS = [5_000, 20_000];
 const isTransient = e => e?.httpStatus >= 500 || e?.httpStatus === 429 || /네트워크 요청 실패/.test(e?.message || '');
 
-// 재배포가 확인된 소스만 공개 JSON에 포함한다. 기본값은 모두 비공개(false).
+// 재배포가 확인된 소스만 공개 JSON에 포함. 기본값은 모두 비공개(false).
 export function enabledSources(env = {}) {
   const confirmed = env.REDISTRIBUTION_CONFIRMED === 'true';
   const on = name => confirmed && env[`PUBLISH_${name}`] === 'true';
@@ -32,7 +32,7 @@ export function enabledSources(env = {}) {
   };
 }
 
-// MIT 라이선스 등 고지가 필요한 소스. 공개 피드(signatures.json, index.html)에 그대로 실린다.
+// MIT 라이선스 등 고지가 필요한 소스. 공개 피드(signatures.json, index.html)에 그대로 반영
 export const NOTICES = {
   PhishingDB: {
     name: 'Phishing.Database',
@@ -42,9 +42,9 @@ export const NOTICES = {
   }
 };
 
-// 기존 workflow의 actions/cache 경로를 실제로 사용한다.
+// 기존 workflow의 actions/cache 경로를 실제로 사용
 // 당일 한 번 성공적으로 받은 PhishTank 공개 데이터는 인증키 없이 로컬 캐시에 기록해
-// 같은 UTC 날짜의 재실행에서 중복 다운로드를 피한다. 오래되거나 잘못된 캐시는 무시한다.
+// 같은 UTC 날짜의 재실행에서 중복 다운로드 회피, 오래되거나 잘못된 캐시는 무시
 const PHISHTANK_CACHE_FILE = fileURLToPath(new URL('../.cache/phishtank-daily.json', import.meta.url));
 export async function cachedPhishTank(collect, {
   cacheFile = PHISHTANK_CACHE_FILE,
@@ -62,7 +62,7 @@ export async function cachedPhishTank(collect, {
   } catch { /* 캐시 없음/오류: 정상적으로 원본 수집 시도 */ }
 
   const collected = await collect();
-  // 캐시에 API 키/응답 헤더 등을 기록하지 않고, 공개 피드에 필요한 정보만 보관한다.
+  // 캐시에 API 키/응답 헤더 등을 기록하지 않고, 공개 피드에 필요한 정보만 보관
   const records = normalizeRows('PhishTank', collected).map(({ url, meta }) => ({ url, meta }));
   if (!records.length) return collected; // 빈 수집은 캐시하지 않고 기존 빌드 정책에 맡김
   try {
@@ -89,7 +89,7 @@ export function defaultCollectors(env = {}, log = () => {}) {
   };
 }
 
-// 확장 프로그램의 점수 계산에 필요한 비민감 필드만 남긴다.
+// 확장 프로그램의 점수 계산에 필요한 비민감 필드만 남김
 function slimMeta(m = {}) {
   const meta = {
     online: m.online === true,
@@ -102,7 +102,7 @@ function slimMeta(m = {}) {
   return meta;
 }
 
-// 한 소스의 원본 행을 정규화·중복 제거하고 비민감 메타만 남긴다.
+// 한 소스의 원본 행을 정규화·중복 제거하고 비민감 메타만 남김
 export function normalizeRows(source, rows) {
   const seen = new Set();
   const out = [];
@@ -129,8 +129,8 @@ export async function buildFeed(env = {}, { collectors, previousFeed = null, now
   const names = Object.keys(enabled).filter(n => enabled[n]);
   const secrets = [env.ABUSE_CH_AUTH_KEY, env.PHISHTANK_KEY].filter(Boolean);
   const redact = msg => secrets.reduce((s, k) => s.split(k).join('***'), String(msg));
-  // OPTIONAL_SOURCES(쉼표 구분)가 실패하면 해당 소스의 직전 배포 기록을 재사용한다.
-  // 새로운 URL이 없더라도 기존 수집 기록은 유지한다.
+  // OPTIONAL_SOURCES(쉼표 구분)가 실패하면 해당 소스의 직전 배포 기록을 재사용
+  // 새로운 URL이 없더라도 기존 수집 기록은 유지
   const optional = new Set(String(env.OPTIONAL_SOURCES || '').split(',').map(x => x.trim()).filter(Boolean));
   const withRetry = async (name, fn) => {
     for (let i = 0; ; i++) {
@@ -155,8 +155,7 @@ export async function buildFeed(env = {}, { collectors, previousFeed = null, now
     for (const name of names) {
       try {
         const rows = normalizeRows(name, await withRetry(name, () => collectors[name]()));
-        // 수동 URL 검사는 이 전체 시그니처를 이용하므로 수집 단계에서 자르지 않습니다.
-        // 주의: push(...rows)는 12만 건 이상에서 "Maximum call stack size exceeded"가 발생하므로 반복문을 쓴다.
+        // 주의: push(...rows)는 12만 건 이상에서 "Maximum call stack size exceeded"가 발생하므로 반복문 사용
         for (const r of rows) signatures.push(r);
         counts[name] = rows.length;
         succeeded.push(name);
@@ -167,9 +166,9 @@ export async function buildFeed(env = {}, { collectors, previousFeed = null, now
         else failures.push(msg);
       }
     }
-    // 일부라도 실패하면 배포하지 않는다 → Pages에는 마지막 정상 배포본이 그대로 남는다.
+    // 일부라도 실패하면 배포하지 않는다 → Pages에는 마지막 정상 배포본이 그대로 남음
     if (failures.length) throw new Error(`피드 수집 실패, 이전 배포본을 유지합니다.\n${failures.join('\n')}`);
-    // 선택 소스까지 전부 실패했다면 빈 피드로 기존 데이터를 지우지 않도록 중단한다.
+    // 선택 소스까지 전부 실패했다면 빈 피드로 기존 데이터를 지우지 않도록 중단
     if (!succeeded.length) throw new Error(`수집에 성공한 소스가 없어 이전 배포본을 유지합니다.\n${warnings.join('\n')}`);
   }
   const generatedAt = new Date(now).toISOString();
@@ -178,7 +177,7 @@ export async function buildFeed(env = {}, { collectors, previousFeed = null, now
     throw new Error('기존 실제 시그니처가 있는데 공개 설정이 모두 꺼져 있습니다. 기존 배포본 보호를 위해 중단합니다. PUBLISH_* 설정을 확인하세요.');
   }
   const priorRecords = previous?.records.filter(r => names.includes(r.source)) || [];
-  // 수집이 성공한 소스만 오래된 항목을 비활성으로 표시한다. 실패한 소스는 이전 상태 그대로 유지한다.
+  // 수집이 성공한 소스만 오래된 항목을 비활성으로 표시. 실패한 소스는 이전 상태 그대로 유지
   if (names.length) {
     signatures = mergeHistory(priorRecords, signatures, succeeded, generatedAt, previous?.generatedAt || generatedAt);
   }
@@ -201,12 +200,11 @@ export async function buildFeed(env = {}, { collectors, previousFeed = null, now
       ? { notices: names.filter(n => NOTICES[n] && signatures.some(r => r.source === n)).map(n => ({ source: n, ...NOTICES[n] })) } : {}),
     ...(signatures.length ? {} : { emptyDataset: true })
   };
-  validateFeed(feed); // 확장 프로그램이 거부할 형식이면 여기서 빌드를 실패시킨다.
+  validateFeed(feed); // 확장 프로그램이 거부할 형식이면 여기서 빌드를 실패
   return feed;
 }
 
-// 이전 공개 피드를 불러와 서버 쪽에서도 누적 이력을 보존한다.
-// 404는 최초 배포일 때만 허용하며, 그 외 오류는 기존 배포본을 잘못 덮어쓰지 않도록 빌드 중단.
+// 이전 공개 피드를 불러와 서버 쪽에서도 누적 이력을 보존
 export async function loadPreviousFeed(url, fetchFn = fetch) {
   if (!url) return null;
   if (!/^https:\/\//i.test(url)) throw new Error('PREVIOUS_FEED_URL은 HTTPS 주소여야 합니다.');
