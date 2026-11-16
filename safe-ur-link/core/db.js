@@ -14,8 +14,8 @@ function open() {
 const done = tx => new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = tx.onabort = () => rej(tx.error); });
 const reqp = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
 
-// 기존 이력을 삭제하지 않고 소스+URL 키로 추가/갱신한다.
-// 작은 배치별 트랜잭션을 사용하므로 대용량 갱신이 실패하더라도 기존 데이터는 삭제되지 않는다.
+// 기존 이력을 삭제하지 않고 소스+URL 키로 추가/갱신
+// 작은 배치별 트랜잭션을 사용하므로 대용량 갱신이 실패하더라도 기존 데이터는 삭제 X
 export async function mergeRecords(records, batchSize = 2500) {
   const db = await open();
   let written = 0;
@@ -32,8 +32,8 @@ export async function mergeRecords(records, batchSize = 2500) {
   return written;
 }
 
-// 이전에 저장된 DB 항목도 삭제 대신 과거 이력으로 전환한다.
-// 이번 수집이 'updated'인 출처만 대상으로 하며, 실패한 소스(retained)는 건드리지 않는다.
+// 이전에 저장된 DB 항목도 삭제 대신 과거 이력으로 전환
+// 이번 수집이 'updated'인 출처만 대상으로 하며, 실패한 소스(retained)는 반영 X
 export async function deactivateMissing(records, sourceStatus, previousGeneratedAt) {
   const succeeded = Object.entries(sourceStatus || {})
     .filter(([, s]) => s?.state === 'updated').map(([name]) => name);
@@ -61,7 +61,7 @@ export async function deactivateMissing(records, sourceStatus, previousGenerated
   return archived;
 }
 
-// 시연용 Demo 데이터는 실제 피드가 처음 수집되었을 때에만 정리한다.
+// 시연용 Demo 데이터는 실제 피드가 처음 수집되었을 때에만 정리
 export async function clearDemo() {
   const db = await open();
   const tx = db.transaction(STORE, 'readwrite');
