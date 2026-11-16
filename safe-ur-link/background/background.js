@@ -200,7 +200,7 @@ export function runAutomaticSync() {
   return startingAutoSync;
 }
 
-// ── 이벤트
+// 이벤트
 chrome.runtime.onInstalled.addListener(() => {
   // 외부 API 키를 브라우저에 저장하지 않도록 남아 있는 키 및 상태를 정리
   chrome.storage.local.remove(['authKey', 'phishKey', 'feedState', 'syncStatus']);
@@ -217,7 +217,7 @@ chrome.alarms.onAlarm.addListener(a => {
   if (a.name === SYNC_ALARM_NAME) runAutomaticSync().catch(console.error);
 });
 
-// 서비스 워커가 알람이나 사용자 요청으로 깨어날 때도 예약 누락을 복구
+// 서비스 워커가 알람이나 사용자 요청으로 깨어날 때도 예약 누락 복구
 if (typeof chrome.alarms?.get === 'function' && typeof chrome.alarms?.create === 'function') {
   runAutomaticSync().catch(console.error);
 }
