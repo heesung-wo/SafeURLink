@@ -1,5 +1,5 @@
-// SafeURLink에서 배포한 시그니처 JSON을 CSV 파일로 저장합니다.
-// 기본값은 GitHub Pages의 실제 피드이며, --input으로 로컬 JSON도 읽을 수 있습니다.
+// SafeURLink에서 배포한 시그니처 JSON을 CSV 파일로 저장
+// 기본값은 GitHub Pages의 실제 피드이며, --input으로 로컬 JSON도 읽을 수 있다
 import { createReadStream, createWriteStream } from 'node:fs';
 import { mkdir, unlink } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
@@ -30,7 +30,7 @@ function optionsFromArgs(args) {
   return opt;
 }
 
-// 엑셀에서 수식으로 실행될 수 있는 텍스트를 일반 문자열로 보관합니다.
+// 엑셀에서 수식으로 실행될 수 있는 텍스트를 일반 문자열로 보관
 function csvCell(value) {
   let text = value === null || value === undefined ? '' : String(value);
   if (/^\s*[=+\-@]/.test(text)) text = `'${text}`;
@@ -87,7 +87,7 @@ async function exportSignatures() {
   }
 
   try {
-    // UTF-8 BOM을 넣어 Excel에서 한글 출처/위협 설명이 깨지지 않도록 합니다.
+    // UTF-8 BOM을 넣어 Excel에서 한글 출처/위협 설명이 깨지지 않도록 함
     output.write('\uFEFFsource,url,active,verified,online,valid,confidence,threat,first_seen,lastObservedAt\r\n');
     const decoder = new TextDecoder('utf-8');
     for await (const byteChunk of source) {
