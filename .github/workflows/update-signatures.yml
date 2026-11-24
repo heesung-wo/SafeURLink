@@ -21,7 +21,7 @@ concurrency:
   group: pages-signatures
   cancel-in-progress: false
 
-# 배포 오류 방지를위해 jobs와 deploy 분리
+# 배포 오류 방지를 위해 jobs와 deploy 분리
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -31,8 +31,6 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
-      - uses: actions/cache@v5
-      - uses: actions/upload-artifact@v5
         with:
           node-version: '22'
 
@@ -52,8 +50,8 @@ jobs:
       - name: Collect and build public feed
         env:
           PREVIOUS_FEED_URL: 'https://heesung-wo.github.io/SafeURLink/signatures.json'
-          ALLOW_FIRST_DEPLOY: 'false'
-          OPTIONAL_SOURCES: 'PhishingDB,PhishTank, ThreatFox'
+          ALLOW_FIRST_DEPLOY: 'true'
+          OPTIONAL_SOURCES: 'PhishingDB,PhishTank,ThreatFox'
           ABUSE_CH_AUTH_KEY: ${{ secrets.ABUSE_CH_AUTH_KEY }}
           PHISHTANK_KEY: ${{ secrets.PHISHTANK_KEY }}
           PHISHTANK_USER_AGENT: ${{ vars.PHISHTANK_USER_AGENT }}
