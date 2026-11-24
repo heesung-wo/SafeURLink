@@ -22,11 +22,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     defaults:
       run:
         working-directory: safe-ur-link
@@ -35,6 +32,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+
       - name: Determine UTC date for PhishTank cache
         id: utc_date
         run: echo "day=$(date -u +%F)" >> "$GITHUB_OUTPUT"
@@ -67,5 +65,14 @@ jobs:
       - uses: actions/upload-pages-artifact@v4
         with:
           path: safe-ur-link/public
-      - uses: actions/deploy-pages@v4
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
         id: deployment
+        uses: actions/deploy-pages@v4
