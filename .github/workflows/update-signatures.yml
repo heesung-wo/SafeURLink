@@ -21,6 +21,7 @@ concurrency:
   group: pages-signatures
   cancel-in-progress: false
 
+# 배포 오류 방지를위해 jobs와 deploy 분리
 jobs:
   build:
     runs-on: ubuntu-latest
