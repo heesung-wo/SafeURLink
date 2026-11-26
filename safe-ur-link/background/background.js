@@ -29,8 +29,11 @@ export async function check(raw) {
   if (s.allow.some(entry => hostMatches(host, entry))) return { ...base, verdict: 'No Threat Detected', score: 0, userList: 'allow', sources: [], reasons: [{ points: 0, text: '사용자 허용 목록에 등록된 도메인입니다' }] };
   if (s.block.some(entry => hostMatches(host, entry))) return { ...base, verdict: 'Malicious', score: 100, userList: 'block', sources: [], reasons: [{ points: 0, text: '사용자 차단 목록에 등록된 도메인입니다' }] };
 
-  // DB에 등록되지 않은 시연용 URL은 악성으로 판정하지 않음
-  const records = await db.lookup(url);
+  // DB에 없는 시연용 URL을 임의로 악성으로 판정 안함
+  let records = await db.lookup(url);
+  if (records.length === 0 && !/^https?:\/\//i.test(String(raw || '').trim())) {
+    records = await db.lookup(url.replace(/^http:\/\//, 'https://'));
+  }
   const historyOnly = records.length > 0 && records.every(r => {
     if (r.meta?.active === false) return true;
     const seen = Date.parse(r.meta?.lastObservedAt);
