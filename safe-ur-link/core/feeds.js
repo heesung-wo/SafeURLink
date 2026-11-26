@@ -205,9 +205,21 @@ export async function threatfox({ authKey = '' } = {}) {
   if (json.query_status !== 'ok' && json.query_status !== 'no_result') {
     throw new Error(`ThreatFox: API 상태 ${String(json.query_status || 'unknown')}`);
   }
-  return (Array.isArray(json.data) ? json.data : []).filter(e => e.ioc_type === 'url' && validHttpURL(e.ioc))
-    .map(e => ({
-      url: e.ioc,
+  const toHttpUrl = e => {
+    const raw = String(e?.ioc || '').trim();
+    if (!raw) return null;
+    if (e.ioc_type === 'url') return validHttpURL(raw) ? raw : null;
+    if (e.ioc_type === 'ip:port' || e.ioc_type === 'domain') {
+      const candidate = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : `http://${raw}`;
+      return validHttpURL(candidate) ? candidate : null;
+    }
+    return null;
+  };
+  return (Array.isArray(json.data) ? json.data : [])
+    .map(e => ({ e, url: toHttpUrl(e) }))
+    .filter(({ url }) => Boolean(url))
+    .map(({ e, url }) => ({
+      url,
       meta: {
         verified: false,  // 제보된 IOC를 임의로 검증 완료로 표시하지 않음
         confidence: Number(e.confidence_level) || 0,
