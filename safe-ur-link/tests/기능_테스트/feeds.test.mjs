@@ -49,12 +49,16 @@ test('ThreatFox requires key, queries 7 days, preserves first_seen', async () =>
   await assert.rejects(threatfox({}), /Auth-Key/);
   globalThis.fetch = mock({query_status:'ok', data:[
     {ioc_type:'url',ioc:'https://bad.invalid/exec',confidence_level:85,first_seen:'2026-10-15 01:02:03 UTC'},
-    {ioc_type:'domain',ioc:'bad.invalid'}
+    {ioc_type:'domain',ioc:'bad.invalid'},
+    {ioc_type:'ip:port',ioc:'103.119.17.126:8080'},
+    {ioc_type:'sha256_hash',ioc:'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}
   ]});
   const items = await threatfox({ authKey:'test' });
-  assert.equal(items.length,1);
+  assert.equal(items.length,3);
   assert.equal(items[0].meta.first_seen,'2026-10-15T01:02:03.000Z');
   assert.equal(items[0].meta.verified,false);
+  assert.equal(items[1].url,'http://bad.invalid');
+  assert.equal(items[2].url,'http://103.119.17.126:8080');
   assert.equal(lastRequest.init.headers['Auth-Key'],'test');
   assert.equal(JSON.parse(lastRequest.init.body).days,7);
 });
